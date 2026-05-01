@@ -80,6 +80,12 @@ export const tmdbService = {
     fetchTMDB<any>(`/movie/${id}`, {
       append_to_response: "credits,videos,watch/providers",
     }),
+  getTvDetails: (id: string | number) =>
+    fetchTMDB<any>(`/tv/${id}`, {
+      append_to_response: "credits,videos,watch/providers",
+    }),
+  getSimilarTv: (id: string | number) =>
+    fetchTMDB<{ results: any[] }>(`/tv/${id}/similar`),
   getMovieByImdbId: async (imdbId: string) => {
     const searchResult = await fetchTMDB<{ movie_results: any[] }>(
       `/find/${imdbId}`,

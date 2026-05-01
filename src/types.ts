@@ -39,14 +39,22 @@ export interface WatchProvider {
 
 export interface MovieDetails extends Movie {
   tagline: string | null;
+  number_of_seasons?: number;
   credits: {
     cast: CastMember[];
   };
   videos: {
     results: Video[];
   };
-  'watch/providers': {
-    results: Record<string, { flatrate?: WatchProvider[]; buy?: WatchProvider[]; rent?: WatchProvider[] }>;
+  "watch/providers": {
+    results: Record<
+      string,
+      {
+        flatrate?: WatchProvider[];
+        buy?: WatchProvider[];
+        rent?: WatchProvider[];
+      }
+    >;
   };
 }
 

@@ -1,22 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Play, Plus, Check, Star, Calendar, Clock, Trophy, ExternalLink, AlertCircle, Share2 } from 'lucide-react';
-import { MovieDetails, OMDBData, Movie } from '../types';
-import { tmdbService } from '../services/tmdb';
-import { omdbService } from '../services/omdb';
-import { useWatchlist } from '../context/WatchlistContext';
-import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
-import MovieCard from '../components/movies/MovieCard';
-import SEO from '../components/common/SEO';
+import React, { useEffect, useState } from "react";
+import { useParams, Link, useLocation } from "react-router-dom";
+import {
+  Play,
+  Plus,
+  Check,
+  Star,
+  Calendar,
+  Clock,
+  Trophy,
+  ExternalLink,
+  AlertCircle,
+  Share2,
+} from "lucide-react";
+import { MovieDetails, OMDBData, Movie } from "../types";
+import { tmdbService } from "../services/tmdb";
+import { omdbService } from "../services/omdb";
+import { useWatchlist } from "../context/WatchlistContext";
+import { motion, AnimatePresence } from "motion/react";
+import { cn } from "../lib/utils";
+import MovieCard from "../components/movies/MovieCard";
+import SEO from "../components/common/SEO";
 
 const MovieDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const isTv = location.pathname.includes("/tv/");
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [similarMovies, setSimilarMovies] = useState<Movie[]>([]);
   const [omdbData, setOmdbData] = useState<OMDBData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [showMovie, setShowMovie] = useState(false);
+  const [server, setServer] = useState(0);
+  const [selectedSeason, setSelectedSeason] = useState(1);
+  const [selectedEpisode, setSelectedEpisode] = useState(1);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
 
   useEffect(() => {
@@ -24,30 +41,44 @@ const MovieDetail: React.FC = () => {
       if (!id) return;
       setLoading(true);
       try {
-        const data = await tmdbService.getMovieDetails(id);
-        setMovie(data);
-        
-        const similar = await tmdbService.getSimilarMovies(id);
-        setSimilarMovies(similar.results.slice(0, 10));
-        
+        const data = isTv
+          ? await tmdbService.getTvDetails(id)
+          : await tmdbService.getMovieDetails(id);
+        const mappedData = isTv
+          ? { ...data, title: data.name, release_date: data.first_air_date }
+          : data;
+        setMovie(mappedData);
+
+        const similar = isTv
+          ? await tmdbService.getSimilarTv(id)
+          : await tmdbService.getSimilarMovies(id);
+        const mappedSimilar = isTv
+          ? similar.results.map((item: any) => ({
+              ...item,
+              title: item.name,
+              release_date: item.first_air_date,
+            }))
+          : similar.results;
+        setSimilarMovies(mappedSimilar.slice(0, 10));
+
         if (data.imdb_id) {
           const omdb = await omdbService.getMovieByImdbId(data.imdb_id);
           setOmdbData(omdb);
         }
       } catch (error) {
-        console.error('Error loading movie details:', error);
+        console.error("Error loading details:", error);
       } finally {
         setLoading(false);
       }
     };
     loadMovie();
     window.scrollTo(0, 0);
-  }, [id]);
+  }, [id, isTv]);
 
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-obsidian">
-        <motion.div 
+        <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
           transition={{ repeat: Infinity, duration: 2 }}
           className="text-4xl font-display font-black text-brand tracking-tighter"
@@ -58,30 +89,38 @@ const MovieDetail: React.FC = () => {
     );
   }
 
-  if (!movie) return <div className="pt-32 text-center text-zinc-500 font-bold">Movie not found</div>;
+  if (!movie)
+    return (
+      <div className="pt-32 text-center text-zinc-500 font-bold">
+        Movie not found
+      </div>
+    );
 
   const inWatchlist = isInWatchlist(movie.id);
-  const trailer = movie.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-  const watchData = movie['watch/providers'].results?.IN;
-  const providers = watchData?.flatrate || watchData?.rent || watchData?.buy || [];
+  const trailer = movie.videos.results.find(
+    (v) => v.type === "Trailer" && v.site === "YouTube",
+  );
+  const watchData = movie["watch/providers"].results?.IN;
+  const providers =
+    watchData?.flatrate || watchData?.rent || watchData?.buy || [];
   const watchLink = watchData?.link;
 
   const handleWatchNow = () => {
     if (movie.imdb_id) {
-      window.open(`https://www.playimdb.com/title/${movie.imdb_id}/`, '_blank');
+      setShowMovie(true);
     } else if (watchLink) {
-      window.open(watchLink, '_blank');
+      window.open(watchLink, "_blank");
     } else {
-      alert('No IMDb ID found for this movie. Unable to redirect to playimdb.');
+      alert("No IMDb ID found for this movie. Unable to play.");
     }
   };
 
   return (
     <div className="pb-20 bg-obsidian text-white overflow-x-hidden">
-      <SEO 
+      <SEO
         title={movie.title}
         description={movie.overview}
-        image={tmdbService.getImageUrl(movie.poster_path, 'w500')}
+        image={tmdbService.getImageUrl(movie.poster_path, "w500")}
         type="video.movie"
       />
       {/* Cinematic Header Background */}
@@ -90,7 +129,7 @@ const MovieDetail: React.FC = () => {
           initial={{ scale: 1.2, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1.2 }}
-          src={tmdbService.getImageUrl(movie.backdrop_path, 'original')}
+          src={tmdbService.getImageUrl(movie.backdrop_path, "original")}
           alt={movie.title}
           className="w-full h-full object-cover brightness-[0.3]"
         />
@@ -101,19 +140,19 @@ const MovieDetail: React.FC = () => {
       <div className="max-w-7xl mx-auto px-8 -mt-96 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Left: Poster & Rating */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             className="lg:col-span-4"
           >
             <div className="relative group mx-auto max-w-sm lg:max-w-none">
               <div className="absolute -inset-4 bg-brand/30 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              <img 
-                src={tmdbService.getImageUrl(movie.poster_path, 'w500')}
+              <img
+                src={tmdbService.getImageUrl(movie.poster_path, "w500")}
                 alt={movie.title}
                 className="w-full rounded-[2rem] shadow-2xl relative z-10 border border-white/10"
               />
-              <motion.button 
+              <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setShowTrailer(true)}
@@ -127,19 +166,29 @@ const MovieDetail: React.FC = () => {
 
             <div className="mt-10 p-8 glass-card rounded-[2rem] space-y-6">
               <div className="flex items-center justify-between">
-                <div className="text-zinc-400 text-xs font-black uppercase tracking-widest">IMDb Score</div>
+                <div className="text-zinc-400 text-xs font-black uppercase tracking-widest">
+                  IMDb Score
+                </div>
                 <div className="flex items-center gap-1.5 text-gold">
                   <Star className="w-5 h-5 fill-current" />
-                  <span className="text-xl font-display font-black text-white">{movie.vote_average.toFixed(1)}</span>
+                  <span className="text-xl font-display font-black text-white">
+                    {movie.vote_average.toFixed(1)}
+                  </span>
                 </div>
               </div>
               {omdbData && (
                 <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                  <div className="text-zinc-400 text-xs font-black uppercase tracking-widest">Metascore</div>
-                  <div className={cn(
-                    "px-3 py-1 rounded text-sm font-black text-white",
-                    parseInt(omdbData.Metascore) > 75 ? "bg-green-500" : "bg-gold"
-                  )}>
+                  <div className="text-zinc-400 text-xs font-black uppercase tracking-widest">
+                    Metascore
+                  </div>
+                  <div
+                    className={cn(
+                      "px-3 py-1 rounded text-sm font-black text-white",
+                      parseInt(omdbData.Metascore) > 75
+                        ? "bg-green-500"
+                        : "bg-gold",
+                    )}
+                  >
                     {omdbData.Metascore}
                   </div>
                 </div>
@@ -148,14 +197,17 @@ const MovieDetail: React.FC = () => {
           </motion.div>
 
           {/* Right: Info */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             className="lg:col-span-8 flex flex-col justify-end"
           >
             <div className="flex flex-wrap items-center gap-3 mb-6">
-              {movie.genres.map(genre => (
-                <span key={genre.id} className="bg-brand/10 border border-brand/30 text-white text-[10px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full">
+              {movie.genres.map((genre) => (
+                <span
+                  key={genre.id}
+                  className="bg-brand/10 border border-brand/30 text-white text-[10px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full"
+                >
                   {genre.name}
                 </span>
               ))}
@@ -168,28 +220,38 @@ const MovieDetail: React.FC = () => {
             <h1 className="text-5xl md:text-8xl font-display font-black tracking-tighter leading-[0.8] mb-6 uppercase">
               {movie.title}
             </h1>
-            
+
             <p className="text-xl text-zinc-300 leading-relaxed max-w-3xl mb-12 font-medium opacity-80 italic">
               "{movie.tagline}"
             </p>
 
             <div className="flex flex-wrap items-center gap-4 mb-16">
-              <button 
+              <button
                 onClick={handleWatchNow}
                 className="btn-neon min-w-[200px] flex items-center justify-center gap-3"
               >
                 <Play className="w-5 h-5 fill-current" />
                 WATCH NOW
               </button>
-              <button 
-                onClick={() => inWatchlist ? removeFromWatchlist(movie.id) : addToWatchlist(movie)}
+              <button
+                onClick={() =>
+                  inWatchlist
+                    ? removeFromWatchlist(movie.id)
+                    : addToWatchlist(movie)
+                }
                 className={cn(
                   "btn-glass min-w-[200px] flex items-center justify-center gap-3",
-                  inWatchlist ? "text-brand border-brand/40 bg-brand/5 scale-105" : ""
+                  inWatchlist
+                    ? "text-brand border-brand/40 bg-brand/5 scale-105"
+                    : "",
                 )}
               >
-                {inWatchlist ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />}
-                {inWatchlist ? 'IN WATCHLIST' : 'WATCHLIST'}
+                {inWatchlist ? (
+                  <Check className="w-5 h-5" />
+                ) : (
+                  <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />
+                )}
+                {inWatchlist ? "IN WATCHLIST" : "WATCHLIST"}
               </button>
               <button className="btn-glass p-4 rounded-xl">
                 <Share2 className="w-5 h-5" />
@@ -198,24 +260,32 @@ const MovieDetail: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div>
-                <h3 className="text-xs font-black uppercase text-brand tracking-[0.3em] mb-6">Storyline</h3>
+                <h3 className="text-xs font-black uppercase text-brand tracking-[0.3em] mb-6">
+                  Storyline
+                </h3>
                 <p className="text-zinc-400 leading-relaxed text-lg font-medium">
                   {movie.overview}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-xs font-black uppercase text-brand tracking-[0.3em] mb-6">Where to Watch</h3>
+                <h3 className="text-xs font-black uppercase text-brand tracking-[0.3em] mb-6">
+                  Where to Watch
+                </h3>
                 {providers.length > 0 ? (
                   <div className="flex flex-wrap gap-4">
-                    {providers.slice(0, 4).map(p => (
-                      <motion.div 
+                    {providers.slice(0, 4).map((p) => (
+                      <motion.div
                         whileHover={{ scale: 1.1, rotate: 5 }}
-                        key={p.provider_id} 
+                        key={p.provider_id}
                         className="w-14 h-14 rounded-2xl overflow-hidden glass-card border-white/10 cursor-pointer shadow-xl shadow-black"
                         onClick={handleWatchNow}
                       >
-                        <img src={`https://image.tmdb.org/t/p/original${p.logo_path}`} title={p.provider_name} className="w-full h-full object-cover" />
+                        <img
+                          src={`https://image.tmdb.org/t/p/original${p.logo_path}`}
+                          title={p.provider_name}
+                          className="w-full h-full object-cover"
+                        />
                       </motion.div>
                     ))}
                   </div>
@@ -233,25 +303,35 @@ const MovieDetail: React.FC = () => {
         {/* Cast Section */}
         <section className="mt-32">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl font-display font-black tracking-tight uppercase">STARRING <span className="text-brand">ACTORS</span></h2>
+            <h2 className="text-3xl font-display font-black tracking-tight uppercase">
+              STARRING <span className="text-brand">ACTORS</span>
+            </h2>
             <div className="h-[1px] flex-grow mx-8 bg-white/5" />
           </div>
           <div className="flex gap-8 overflow-x-auto pb-8 horizontal-scroll">
             {movie.credits.cast.slice(0, 10).map((actor, idx) => (
-              <Link 
+              <Link
                 to={`/person/${actor.id}`}
-                key={actor.id} 
+                key={actor.id}
                 className="flex-shrink-0 w-40 text-center group"
               >
                 <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border-2 border-white/5 shadow-2xl group cursor-pointer ring-offset-4 ring-offset-obsidian group-hover:ring-2 ring-brand transition-all duration-500">
-                  <img 
-                    src={actor.profile_path ? tmdbService.getImageUrl(actor.profile_path, 'w185') : 'https://via.placeholder.com/185x185?text=No+Image'} 
-                    alt={actor.name} 
+                  <img
+                    src={
+                      actor.profile_path
+                        ? tmdbService.getImageUrl(actor.profile_path, "w185")
+                        : "https://via.placeholder.com/185x185?text=No+Image"
+                    }
+                    alt={actor.name}
                     className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110"
                   />
                 </div>
-                <h4 className="font-bold text-sm truncate group-hover:text-brand transition-colors">{actor.name}</h4>
-                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1 truncate">{actor.character}</p>
+                <h4 className="font-bold text-sm truncate group-hover:text-brand transition-colors">
+                  {actor.name}
+                </h4>
+                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1 truncate">
+                  {actor.character}
+                </p>
               </Link>
             ))}
           </div>
@@ -261,7 +341,9 @@ const MovieDetail: React.FC = () => {
         {similarMovies.length > 0 && (
           <section className="mt-32">
             <div className="flex items-center justify-between mb-12">
-              <h2 className="text-3xl font-display font-black tracking-tight uppercase">MORE LIKE <span className="text-brand">THIS</span></h2>
+              <h2 className="text-3xl font-display font-black tracking-tight uppercase">
+                MORE LIKE <span className="text-brand">THIS</span>
+              </h2>
               <div className="h-[1px] flex-grow mx-8 bg-white/5" />
             </div>
             <div className="flex gap-6 overflow-x-auto pb-8 horizontal-scroll">
@@ -278,14 +360,17 @@ const MovieDetail: React.FC = () => {
       {/* Trailer Modal */}
       <AnimatePresence>
         {showTrailer && trailer && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10"
           >
-            <div className="absolute inset-0 bg-obsidian/95 backdrop-blur-3xl" onClick={() => setShowTrailer(false)} />
-            <motion.div 
+            <div
+              className="absolute inset-0 bg-obsidian/95 backdrop-blur-3xl"
+              onClick={() => setShowTrailer(false)}
+            />
+            <motion.div
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 50 }}
@@ -298,12 +383,130 @@ const MovieDetail: React.FC = () => {
                 allowFullScreen
                 allow="autoplay"
               />
-              <button 
+              <button
                 onClick={() => setShowTrailer(false)}
                 className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors"
               >
                 <Plus className="w-8 h-8 rotate-45" />
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showMovie && movie.imdb_id && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10"
+          >
+            <div
+              className="absolute inset-0 bg-obsidian/95 backdrop-blur-3xl"
+              onClick={() => setShowMovie(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.9, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 50 }}
+              className="relative z-10 w-full max-w-6xl flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between bg-black/60 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex-wrap gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400 text-sm font-bold uppercase tracking-widest">
+                      Server:
+                    </span>
+                    {[
+                      { name: "S1 (Auto)", id: 0 },
+                      { name: "S2 (VidSrc)", id: 1 },
+                      { name: "S3 (2Embed)", id: 2 },
+                    ].map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => setServer(s.id)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-xl text-sm font-bold transition-colors",
+                          server === s.id
+                            ? "bg-brand text-white"
+                            : "bg-white/5 hover:bg-white/10 text-zinc-300",
+                        )}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {isTv && movie.number_of_seasons && (
+                    <div className="flex items-center gap-2 ml-4">
+                      <select
+                        className="bg-white/10 border border-white/20 text-white text-sm rounded-lg outline-none cursor-pointer px-3 py-1.5 font-bold"
+                        value={selectedSeason}
+                        onChange={(e) => {
+                          setSelectedSeason(Number(e.target.value));
+                          setSelectedEpisode(1);
+                        }}
+                      >
+                        {Array.from({ length: movie.number_of_seasons }).map(
+                          (_, i) => (
+                            <option
+                              key={i + 1}
+                              value={i + 1}
+                              className="bg-obsidian"
+                            >
+                              Season {i + 1}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                      <select
+                        className="bg-white/10 border border-white/20 text-white text-sm rounded-lg outline-none cursor-pointer px-3 py-1.5 font-bold"
+                        value={selectedEpisode}
+                        onChange={(e) =>
+                          setSelectedEpisode(Number(e.target.value))
+                        }
+                      >
+                        {Array.from({ length: 50 }).map((_, i) => (
+                          <option
+                            key={i + 1}
+                            value={i + 1}
+                            className="bg-obsidian"
+                          >
+                            Episode {i + 1}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setShowMovie(false)}
+                  className="w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors pointer-events-auto shrink-0"
+                >
+                  <Plus className="w-6 h-6 rotate-45" />
+                </button>
+              </div>
+              <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 bg-black relative">
+                <iframe
+                  src={
+                    server === 0
+                      ? isTv
+                        ? `https://embed.su/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
+                        : `https://embed.su/embed/movie/${movie.id}`
+                      : server === 1
+                        ? isTv
+                          ? `https://vidsrc.net/embed/tv?tmdb=${movie.id}&season=${selectedSeason}&episode=${selectedEpisode}`
+                          : `https://vidsrc.net/embed/movie?tmdb=${movie.id}`
+                        : isTv
+                          ? `https://www.2embed.cc/embedtv/${movie.id}&s=${selectedSeason}&e=${selectedEpisode}`
+                          : `https://www.2embed.cc/embed/${movie.imdb_id || movie.id}`
+                  }
+                  title="Movie Player"
+                  className="w-full h-full"
+                  allowFullScreen
+                  allow="autoplay; fullscreen"
+                />
+              </div>
             </motion.div>
           </motion.div>
         )}
