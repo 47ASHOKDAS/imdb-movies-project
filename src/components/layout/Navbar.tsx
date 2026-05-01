@@ -41,29 +41,34 @@ const Navbar: React.FC = () => {
       <div className="flex items-center gap-6 shrink-0">
         <div className="flex items-center gap-8 hidden lg:flex">
           {[
+            { name: 'Home', path: '/' },
             { name: 'Movies', path: '/' },
             { name: 'TV Shows', path: '/' },
-            { name: 'Watchlist', path: '/watchlist' }
+            { name: 'Watchlist', path: '/watchlist', icon: Bookmark }
           ].map((link) => (
             <Link 
               key={link.name}
               to={link.path} 
               className={cn(
-                "text-[10px] font-black tracking-[0.2em] uppercase transition-all duration-300",
-                location.pathname === link.path ? "text-brand" : "text-zinc-500 hover:text-white"
+                "text-sm font-semibold transition-all duration-300 relative group flex items-center gap-2",
+                location.pathname === link.path && link.name === 'Home' ? "text-white" : "text-zinc-400 hover:text-white"
               )}
             >
+              {link.icon && <link.icon className="w-4 h-4" />}
               {link.name}
+              {location.pathname === link.path && link.name === 'Home' && (
+                <div className="absolute -bottom-6 left-0 right-0 h-[2px] bg-brand rounded-t-full shadow-[0_-2px_10px_rgba(139,92,246,0.8)]" />
+              )}
             </Link>
           ))}
         </div>
 
         <button
-          onClick={toggleTheme}
-          className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all border border-white/10"
-          aria-label="Toggle theme"
+          onClick={() => window.dispatchEvent(new CustomEvent('toggleSidebar'))}
+          className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center transition-all hover:bg-white/10"
+          aria-label="Toggle menu"
         >
-          {theme === 'dark' ? <Sun className="w-4 h-4 text-gold" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+          <Menu className="w-5 h-5 text-white" />
         </button>
       </div>
     </nav>

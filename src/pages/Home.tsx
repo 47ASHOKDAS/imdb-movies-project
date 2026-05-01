@@ -56,53 +56,72 @@ const Home: React.FC = () => {
   useEffect(() => {
     if (selectedGenre === 'all') return;
     
+    let isMounted = true;
+
     const fetchFirstPage = async () => {
       setLoading(true);
+      setGenreMovies([]); // Clear previous category movies
       setPage(1);
-      setGenreMovies([]);
       try {
         const res = await tmdbService.getMoviesByGenre(selectedGenre, 1);
-        setGenreMovies(res.results);
-        setHasMore(res.total_pages > 1);
+        if (isMounted) {
+          setGenreMovies(res.results);
+          setPage(1);
+          setHasMore(res.total_pages > 1);
+        }
       } catch (error) {
         console.error('Error fetching genre movies:', error);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchFirstPage();
     window.scrollTo(0, 0);
+
+    return () => { isMounted = false; };
   }, [selectedGenre]);
 
-  const loadMore = async () => {
+  const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore || selectedGenre === 'all') return;
     
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
       const res = await tmdbService.getMoviesByGenre(selectedGenre, nextPage);
-      setGenreMovies(prev => [...prev, ...res.results]);
+      setGenreMovies(prev => {
+        const existingIds = new Set(prev.map(m => m.id));
+        const newMovies = res.results.filter(m => !existingIds.has(m.id));
+        return [...prev, ...newMovies];
+      });
       setPage(nextPage);
-      setHasMore(nextPage < res.total_pages);
+      setHasMore(nextPage < res.total_pages && nextPage < 500);
     } catch (error) {
       console.error('Error loading more movies:', error);
     } finally {
       setLoadingMore(false);
     }
-  };
+  }, [loadingMore, hasMore, selectedGenre, page]);
 
-  // Intersection Observer for Infinite Scroll
-  const observer = React.useRef<IntersectionObserver | null>(null);
-  const lastMovieElementRef = React.useCallback((node: HTMLDivElement) => {
-    if (loading || loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMore();
-      }
-    });
-    if (node) observer.current.observe(node);
-  }, [loading, loadingMore, hasMore, selectedGenre, page]);
+  // Target ref for intersection observer
+  const loadMoreRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          loadMore();
+        }
+      },
+      { rootMargin: '400px' } // Pre-load 400px before reaching the bottom
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [loadMore, hasMore, loading, loadingMore]);
 
   if (loading && genreMovies.length === 0) {
     return (
@@ -112,25 +131,34 @@ const Home: React.FC = () => {
     );
   }
 
-  const Section = ({ title, movies, icon: Icon, color }: any) => (
-    <div className="mb-16">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className={cn("p-2 rounded-xl bg-opacity-10", color.replace('text-', 'bg-'))}>
-            <Icon className={cn("w-6 h-6", color)} />
-          </div>
-          <h2 className="text-2xl font-display font-black tracking-tight uppercase">
+  const Section = ({ title, movies }: { title: string, movies: Movie[] }) => (
+    <div className="mb-12 relative group">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-1.5 h-8 bg-brand rounded-full" />
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight">
             {title}
           </h2>
         </div>
-        <Link to="/search" className="group flex items-center gap-2 text-[10px] font-black tracking-widest text-zinc-500 hover:text-brand transition-colors">
-          VIEW ALL <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        <Link to="/search" className="text-sm font-semibold tracking-wide text-brand hover:text-brand/80 transition-colors">
+          View All
         </Link>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
-        {movies.slice(0, 10).map((movie: Movie) => (
-          <MovieCard key={movie.id} movie={movie} />
-        ))}
+      <div className="relative">
+        <div className="flex overflow-x-auto gap-4 md:gap-6 pb-6 pt-2 no-scrollbar scroll-smooth snap-x">
+          {movies.slice(0, 15).map((movie: Movie) => (
+            <div key={movie.id} className="min-w-[140px] md:min-w-[180px] snap-start">
+              <MovieCard movie={movie} />
+            </div>
+          ))}
+        </div>
+        
+        {/* Right Fade/Scroll Indicator */}
+        <div className="absolute top-0 right-0 bottom-0 w-24 bg-gradient-to-l from-obsidian to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-end pr-2 hidden md:flex">
+          <div className="w-10 h-10 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 pointer-events-auto cursor-pointer hover:bg-brand hover:border-brand transition-all">
+            <ChevronRight className="w-5 h-5 text-white" />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -146,49 +174,25 @@ const Home: React.FC = () => {
       
       <Sidebar selectedGenre={selectedGenre} onSelectGenre={setSelectedGenre} />
 
-      <main className="flex-grow lg:pl-64">
-        {/* Mobile Genre Selector */}
-        <div className="lg:hidden flex gap-4 overflow-x-auto px-8 py-6 sticky top-20 z-30 bg-obsidian/80 backdrop-blur-xl border-b border-white/5 no-scrollbar">
-          {GENRES.map((genre) => (
-            <button
-              key={genre.id}
-              onClick={() => setSelectedGenre(genre.id)}
-              className={cn(
-                "whitespace-nowrap px-6 py-2 rounded-full text-xs font-black tracking-widest uppercase transition-all",
-                selectedGenre === genre.id 
-                  ? "bg-brand text-white shadow-lg shadow-brand/20" 
-                  : "bg-white/5 text-zinc-500 hover:text-white"
-              )}
-            >
-              {genre.name}
-            </button>
-          ))}
-        </div>
-
+      <main className="flex-grow w-full">
         {selectedGenre === 'all' ? (
           <>
             {trending.length > 0 && <Hero movie={trending[0]} />}
             
-            <div className="px-8 md:px-12 pb-20 -mt-20 relative z-20">
+            <div className="px-6 md:px-12 pb-20 -mt-8 relative z-20">
               <Section 
                 title="Trending Now" 
                 movies={trending.slice(1)} 
-                icon={TrendingUp} 
-                color="text-brand"
               />
 
               <Section 
                 title="Top Rated" 
                 movies={topRated} 
-                icon={Star} 
-                color="text-gold"
               />
 
               <Section 
                 title="Action Packed" 
                 movies={actionMovies} 
-                icon={Zap} 
-                color="text-blue-500"
               />
             </div>
           </>
@@ -221,7 +225,7 @@ const Home: React.FC = () => {
 
             {/* Loading Trigger for Infinite Scroll */}
             {hasMore && (
-              <div ref={lastMovieElementRef} className="py-20 flex justify-center">
+              <div ref={loadMoreRef} className="py-20 flex justify-center w-full">
                 {loadingMore && <Loader2 className="w-10 h-10 text-brand animate-spin" />}
               </div>
             )}
