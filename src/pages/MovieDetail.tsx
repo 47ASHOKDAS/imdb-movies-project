@@ -82,7 +82,7 @@ const MovieDetail: React.FC = () => {
           transition={{ repeat: Infinity, duration: 2 }}
           className="text-4xl font-display font-black text-brand tracking-tighter"
         >
-          IMDB<span className="text-white">flix</span>
+          IMDB<span className="text-current">flix</span>
         </motion.div>
       </div>
     );
@@ -132,7 +132,7 @@ const MovieDetail: React.FC = () => {
   };
 
   return (
-    <div className="pb-20 bg-obsidian text-white overflow-x-hidden">
+    <div className="pb-20 bg-transparent text-current overflow-x-hidden">
       <SEO
         title={movie.title}
         description={movie.overview}
@@ -175,7 +175,7 @@ const MovieDetail: React.FC = () => {
                 className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem] z-20"
               >
                 <div className="w-20 h-20 bg-brand rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.6)]">
-                  <Play className="w-10 h-10 text-white fill-current ml-2" />
+                  <Play className="w-10 h-10 text-current fill-current ml-2" />
                 </div>
               </motion.button>
             </div>
@@ -187,7 +187,7 @@ const MovieDetail: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5 text-gold">
                   <Star className="w-5 h-5 fill-current" />
-                  <span className="text-xl font-display font-black text-white">
+                  <span className="text-xl font-display font-black text-current">
                     {movie.vote_average.toFixed(1)}
                   </span>
                 </div>
@@ -222,7 +222,7 @@ const MovieDetail: React.FC = () => {
               {movie.genres.map((genre) => (
                 <span
                   key={genre.id}
-                  className="bg-brand/10 border border-brand/30 text-white text-[10px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full"
+                  className="bg-brand/10 border border-brand/30 text-current text-[10px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full"
                 >
                   {genre.name}
                 </span>
@@ -421,8 +421,11 @@ const MovieDetail: React.FC = () => {
 
               {isTv &&
                 movie.seasons &&
-                typeof selectedSeason === "number" && (() => {
-                  const validSeasons = movie.seasons.filter((s) => s.season_number > 0);
+                typeof selectedSeason === "number" &&
+                (() => {
+                  const validSeasons = movie.seasons.filter(
+                    (s) => s.season_number > 0,
+                  );
                   const currentSeasonData = validSeasons.find(
                     (s) => s.season_number === selectedSeason,
                   );
@@ -435,7 +438,7 @@ const MovieDetail: React.FC = () => {
                           Season
                         </label>
                         <select
-                          className="w-full bg-white/5 border border-white/10 text-white rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 overflow-hidden appearance-none"
+                          className="w-full bg-white/5 border border-white/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 overflow-hidden appearance-none"
                           value={selectedSeason}
                           onChange={(e) => {
                             setSelectedSeason(Number(e.target.value));
@@ -458,7 +461,7 @@ const MovieDetail: React.FC = () => {
                           Episode
                         </label>
                         <select
-                          className="w-full bg-white/5 border border-white/10 text-white rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 appearance-none"
+                          className="w-full bg-white/5 border border-white/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 appearance-none"
                           value={selectedEpisode}
                           onChange={(e) =>
                             setSelectedEpisode(Number(e.target.value))
@@ -505,7 +508,7 @@ const MovieDetail: React.FC = () => {
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="font-bold text-lg transition-colors group-hover:text-white">
+                      <span className="font-bold text-lg transition-colors group-hover:text-current">
                         Server 2
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
@@ -513,7 +516,7 @@ const MovieDetail: React.FC = () => {
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white transition-colors">
-                      <Play className="w-5 h-5 fill-current ml-1 text-white opacity-50 group-hover:opacity-100 transition-opacity" />
+                      <Play className="w-5 h-5 fill-current ml-1 text-current opacity-50 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                 </button>

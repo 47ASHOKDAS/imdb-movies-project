@@ -123,7 +123,7 @@ const Category = () => {
   }
 
   return (
-    <div className="bg-obsidian min-h-screen text-white pt-24 pb-20 px-6 md:px-12">
+    <div className="bg-transparent min-h-screen text-current pt-24 pb-20 px-6 md:px-12">
       <SEO
         title={`${title} - IMDBflix`}
         description={`Browse ${title.toLowerCase()} on IMDBflix.`}

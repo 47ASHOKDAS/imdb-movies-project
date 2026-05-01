@@ -40,12 +40,11 @@ const Home = ({ type = "movie" }: HomeProps) => {
     const fetchInitialData = async () => {
       setLoading(true);
       try {
-        const [trendingRes, topRatedRes, popularRes] =
-          await Promise.all([
-            tmdbService.getTrending(type),
-            tmdbService.getTopRated(type),
-            tmdbService.getPopular(type),
-          ]);
+        const [trendingRes, topRatedRes, popularRes] = await Promise.all([
+          tmdbService.getTrending(type),
+          tmdbService.getTopRated(type),
+          tmdbService.getPopular(type),
+        ]);
         setTrending(trendingRes.results);
         setTopRated(topRatedRes.results);
         setPopular(popularRes.results);
@@ -181,7 +180,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
   const moviesByYear = groupMoviesByYear(genreMovies);
 
   return (
-    <div className="bg-obsidian min-h-screen text-white flex">
+    <div className="bg-transparent min-h-screen text-current flex">
       <SEO
         title={
           selectedGenre === "all"

@@ -1,17 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", sans-serif;
-  
-  --color-brand: #8b5cf6; /* Electric Purple */
-  --color-accent: #06b6d4; /* Cyber Cyan */
+
+  --color-brand: var(--theme-brand, #8b5cf6);
+  --color-accent: var(--theme-accent, #06b6d4);
   --color-gold: #f59e0b;
-  --color-obsidian: #0b0b0f;
-  
-  --shadow-neon: 0 0 20px rgba(139, 92, 246, 0.3);
-  --shadow-neon-strong: 0 0 40px rgba(139, 92, 246, 0.5);
+  --color-obsidian: var(--theme-obsidian, #0b0b0f);
+
+  --shadow-neon: 0 0 20px var(--color-brand);
+  --shadow-neon-strong: 0 0 40px var(--color-brand);
 }
 
 @layer base {
@@ -20,11 +20,34 @@
   }
 
   .dark {
-    @apply bg-obsidian text-white;
+    --theme-brand: #8b5cf6;
+    --theme-accent: #06b6d4;
+    --theme-obsidian: #0b0b0f;
+    --theme-bg: #0b0b0f;
+    --theme-text: #ffffff;
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
   }
 
   .light {
-    @apply bg-zinc-50 text-black;
+    --theme-brand: #7c3aed;
+    --theme-accent: #0891b2;
+    --theme-obsidian: #0b0b0f;
+    --theme-bg: #fafafa;
+    --theme-text: #000000;
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
+  }
+
+  .cyberpunk {
+    --theme-brand: #ff003c;
+    --theme-accent: #00f0ff;
+    --theme-obsidian: #050510;
+    --theme-bg: #050510;
+    --theme-text: #00f0ff;
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
+    text-shadow: 0 0 1px rgba(0, 240, 255, 0.4);
   }
 }
 
@@ -32,13 +55,19 @@
   .glass-card {
     @apply backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl;
   }
-  
+
   .glass-nav {
     @apply backdrop-blur-3xl bg-obsidian/80 border-b border-white/5;
+  }
+  .light .glass-nav {
+    @apply bg-white/80 border-black/5;
   }
 
   .bg-grid-white {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.04)'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+  }
+  .light .bg-grid-white {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(0 0 0 / 0.04)'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
   }
 
   .bg-grid-black {
@@ -47,35 +76,41 @@
 
   .btn-neon {
     @apply relative px-8 py-3 rounded-xl font-bold transition-all duration-300 overflow-hidden
-           bg-brand text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]
-           hover:shadow-[0_0_25px_rgba(139,92,246,0.8)] hover:scale-105 active:scale-95;
+           bg-brand text-white shadow-[0_0_15px_var(--color-brand)]
+           hover:shadow-[0_0_25px_var(--color-brand)] hover:scale-105 active:scale-95;
   }
 
   .btn-glass {
     @apply px-8 py-3 rounded-xl font-bold transition-all duration-300
-           bg-white/5 border border-white/10 text-white backdrop-blur-md
+           bg-white/5 border border-white/10 text-current backdrop-blur-md
            hover:bg-white/10 hover:border-white/20;
   }
-  
+  .light .btn-glass {
+    @apply bg-black/5 border-black/10 hover:bg-black/10 hover:border-black/20;
+  }
+
   .neon-text-glow {
-    text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    text-shadow: 0 0 10px var(--color-brand);
   }
 }
 
 /* Cinematic Shadows & Gradients */
 .hero-mask {
-  background: linear-gradient(to right, #0b0b0f 0%, rgba(11, 11, 15, 0.8) 40%, transparent 100%),
-              linear-gradient(to top, #0b0b0f 0%, transparent 50%);
+  background:
+    linear-gradient(to right, var(--theme-bg) 0%, transparent 100%),
+    linear-gradient(to top, var(--theme-bg) 0%, transparent 50%);
 }
 
 .bottom-mask {
-  background: linear-gradient(to top, #0b0b0f 0%, transparent 100%);
+  background: linear-gradient(to top, var(--theme-bg) 0%, transparent 100%);
 }
 
-.horizontal-scroll, .no-scrollbar {
+.horizontal-scroll,
+.no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.horizontal-scroll::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar {
+.horizontal-scroll::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }

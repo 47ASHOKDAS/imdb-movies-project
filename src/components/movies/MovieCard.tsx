@@ -177,7 +177,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, className }) => {
       </Link>
 
       <div className="flex flex-col">
-        <h3 className="text-white text-sm font-semibold truncate group-hover:text-brand transition-colors">
+        <h3 className="text-current text-sm font-semibold truncate group-hover:text-brand transition-colors">
           {movie.title || movie.name}
         </h3>
         <span className="text-zinc-500 text-xs font-medium">
