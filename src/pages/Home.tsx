@@ -141,29 +141,35 @@ const Home = ({ type = "movie" }: HomeProps) => {
     );
   }
 
-  const Section = ({ title, movies }: { title: string; movies: Movie[] }) => (
-    <div className="mb-16">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-8 bg-brand rounded-full" />
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight">
-            {title}
-          </h2>
+  const Section = ({ title, movies }: { title: string; movies: Movie[] }) => {
+    const [showAll, setShowAll] = React.useState(false);
+    
+    return (
+      <div className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-8 bg-brand rounded-full" />
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight">
+              {title}
+            </h2>
+          </div>
+          {!showAll && movies.length > 10 && (
+            <button
+              onClick={() => setShowAll(true)}
+              className="text-sm font-semibold tracking-wide text-brand hover:text-brand/80 transition-colors cursor-pointer outline-none"
+            >
+              View All
+            </button>
+          )}
         </div>
-        <Link
-          to="/search"
-          className="text-sm font-semibold tracking-wide text-brand hover:text-brand/80 transition-colors"
-        >
-          View All
-        </Link>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
+          {movies.slice(0, showAll ? movies.length : 10).map((movie: Movie) => (
+            <MovieCard key={movie.id} movie={movie} />
+          ))}
+        </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
-        {movies.slice(0, 10).map((movie: Movie) => (
-          <MovieCard key={movie.id} movie={movie} />
-        ))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const moviesByYear = groupMoviesByYear(genreMovies);
 
