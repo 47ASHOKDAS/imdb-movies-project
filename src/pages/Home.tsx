@@ -43,6 +43,8 @@ const Home = ({ type = "movie" }: HomeProps) => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const isGridMode = selectedGenre !== "all" || !!selectedYear;
+
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -61,11 +63,11 @@ const Home = ({ type = "movie" }: HomeProps) => {
         setLoading(false);
       }
     };
-    if (selectedGenre === "all") fetchInitialData();
-  }, [selectedGenre, type]);
+    if (!isGridMode) fetchInitialData();
+  }, [isGridMode, type]);
 
   useEffect(() => {
-    if (selectedGenre === "all") return;
+    if (!isGridMode) return;
 
     let isMounted = true;
 
@@ -97,10 +99,10 @@ const Home = ({ type = "movie" }: HomeProps) => {
     return () => {
       isMounted = false;
     };
-  }, [selectedGenre, type, selectedYear]);
+  }, [isGridMode, selectedGenre, type, selectedYear]);
 
   const loadMore = React.useCallback(async () => {
-    if (loadingMore || !hasMore || selectedGenre === "all") return;
+    if (loadingMore || !hasMore || !isGridMode) return;
 
     setLoadingMore(true);
     try {
@@ -202,8 +204,54 @@ const Home = ({ type = "movie" }: HomeProps) => {
       />
 
       <main className="flex-grow w-full">
-        {selectedGenre === "all" ? (
-          <div className="pt-28 px-6 md:px-12 pb-20 relative z-20">
+        {!isGridMode ? (
+          <div className="pt-32 px-6 md:px-12 pb-20 relative z-20">
+            <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-display font-black tracking-tight">
+                  Discover <span className="text-brand">Movies</span>
+                </h1>
+                <p className="text-zinc-500 mt-2 text-lg">
+                  Explore the best movies across various categories.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 min-w-[200px]">
+                <label
+                  htmlFor="year-select-home"
+                  className="text-xs font-bold text-zinc-500 uppercase tracking-wider"
+                >
+                  Filter by Year
+                </label>
+                <div className="relative">
+                  <select
+                    id="year-select-home"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="w-full bg-current/5 border border-current/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-current/10 appearance-none"
+                  >
+                    <option
+                      value=""
+                      className="bg-[var(--theme-bg)] text-current"
+                    >
+                      All Years
+                    </option>
+                    {years.map((year) => (
+                      <option
+                        key={year}
+                        value={year}
+                        className="bg-[var(--theme-bg)] text-current"
+                      >
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronRight className="w-5 h-5 text-zinc-400 rotate-90" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <Section title="Trending Now" movies={trending} slug="trending" />
 
             <Section title="Bollywood" movies={bollywood} slug="bollywood" />

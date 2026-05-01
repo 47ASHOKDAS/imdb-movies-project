@@ -70,7 +70,6 @@ export const tmdbService = {
     if (isAnime) actualGenreId = "16"; // 16 is Animation in TMDB
 
     const params: Record<string, string> = {
-      with_genres: actualGenreId,
       page: page.toString(),
       sort_by: "vote_average.desc",
       "vote_count.gte": "300",
@@ -78,6 +77,10 @@ export const tmdbService = {
         new Date().toISOString().split("T")[0],
       with_original_language: isAnime ? "ja" : "en|hi",
     };
+
+    if (actualGenreId && actualGenreId !== "all") {
+      params.with_genres = actualGenreId;
+    }
 
     if (year) {
       if (type === "movie") {
