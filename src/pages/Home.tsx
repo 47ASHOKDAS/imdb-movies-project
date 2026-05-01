@@ -16,10 +16,23 @@ interface HomeProps {
 const Home = ({ type = "movie" }: HomeProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedGenre = searchParams.get("genre") || "all";
+  const selectedYear = searchParams.get("year") || "";
 
   const setSelectedGenre = (genreStr: string) => {
-    setSearchParams(genreStr === "all" ? {} : { genre: genreStr });
+    setSearchParams(
+      genreStr === "all" ? {} : { genre: genreStr, year: selectedYear },
+    );
   };
+
+  const setSelectedYear = (yearStr: string) => {
+    const newParams: any = {};
+    if (selectedGenre !== "all") newParams.genre = selectedGenre;
+    if (yearStr) newParams.year = yearStr;
+    setSearchParams(newParams);
+  };
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from(new Array(50), (val, index) => currentYear - index);
 
   const [trending, setTrending] = useState<Movie[]>([]);
   const [bollywood, setBollywood] = useState<Movie[]>([]);
@@ -29,18 +42,6 @@ const Home = ({ type = "movie" }: HomeProps) => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  // Group movies by year
-  const groupMoviesByYear = (movies: Movie[]) => {
-    const groups: { [key: string]: Movie[] } = {};
-    movies.forEach((movie) => {
-      const dateString = movie.release_date || movie.first_air_date;
-      const year = dateString ? dateString.split("-")[0] : "Unknown";
-      if (!groups[year]) groups[year] = [];
-      groups[year].push(movie);
-    });
-    return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
-  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -73,7 +74,12 @@ const Home = ({ type = "movie" }: HomeProps) => {
       setGenreMovies([]); // Clear previous category movies
       setPage(1);
       try {
-        const res = await tmdbService.getMoviesByGenre(selectedGenre, 1, type);
+        const res = await tmdbService.getMoviesByGenre(
+          selectedGenre,
+          1,
+          type,
+          selectedYear,
+        );
         if (isMounted) {
           setGenreMovies(res.results);
           setPage(1);
@@ -91,7 +97,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
     return () => {
       isMounted = false;
     };
-  }, [selectedGenre, type]);
+  }, [selectedGenre, type, selectedYear]);
 
   const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore || selectedGenre === "all") return;
@@ -103,6 +109,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
         selectedGenre,
         nextPage,
         type,
+        selectedYear,
       );
       setGenreMovies((prev) => {
         const existingIds = new Set(prev.map((m) => m.id));
@@ -183,8 +190,6 @@ const Home = ({ type = "movie" }: HomeProps) => {
     );
   };
 
-  const moviesByYear = groupMoviesByYear(genreMovies);
-
   return (
     <div className="bg-transparent min-h-screen text-current flex">
       <SEO
@@ -207,37 +212,64 @@ const Home = ({ type = "movie" }: HomeProps) => {
           </div>
         ) : (
           <div className="pt-32 px-8 md:px-12 pb-20">
-            <div className="mb-16">
-              <span className="text-brand font-black text-xs tracking-[0.4em] uppercase mb-4 block">
-                Collection
-              </span>
-              <h1 className="text-5xl md:text-7xl font-display font-black uppercase mb-4 tracking-tighter">
-                {GENRES.find((g) => g.id === selectedGenre)?.name}{" "}
-                <span className="text-zinc-500">Movies</span>
-              </h1>
-              <div className="h-1 w-24 bg-brand rounded-full mb-6" />
-              <p className="text-zinc-500 font-medium text-lg">
-                Browse through our vast library of{" "}
-                {GENRES.find((g) => g.id === selectedGenre)?.name.toLowerCase()}{" "}
-                films, sorted by release date.
-              </p>
-            </div>
-
-            <div className="space-y-20">
-              {moviesByYear.map(([year, movies]) => (
-                <div key={year} className="relative">
-                  <div className="sticky top-40 z-20 mb-10 flex items-center gap-10">
-                    <h2 className="text-4xl font-display font-black text-white/90 drop-shadow-2xl">
-                      {year}
-                    </h2>
-                    <div className="h-[1px] flex-grow bg-white/5 backdrop-blur-sm" />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
-                    {movies.map((movie) => (
-                      <MovieCard key={movie.id} movie={movie} />
+            <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div>
+                <span className="text-brand font-black text-xs tracking-[0.4em] uppercase mb-4 block">
+                  Collection
+                </span>
+                <h1 className="text-5xl md:text-7xl font-display font-black uppercase mb-4 tracking-tighter">
+                  {GENRES.find((g) => g.id === selectedGenre)?.name}{" "}
+                  <span className="text-zinc-500">Movies</span>
+                </h1>
+                <div className="h-1 w-24 bg-brand rounded-full mb-6" />
+                <p className="text-zinc-500 font-medium text-lg">
+                  Browse through our vast library of{" "}
+                  {GENRES.find(
+                    (g) => g.id === selectedGenre,
+                  )?.name.toLowerCase()}{" "}
+                  films, sorted by highest rating.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 min-w-[200px]">
+                <label
+                  htmlFor="year-select"
+                  className="text-xs font-bold text-zinc-500 uppercase tracking-wider"
+                >
+                  Filter by Year
+                </label>
+                <div className="relative">
+                  <select
+                    id="year-select"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="w-full bg-current/5 border border-current/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-current/10 appearance-none"
+                  >
+                    <option
+                      value=""
+                      className="bg-[var(--theme-bg)] text-current"
+                    >
+                      All Years
+                    </option>
+                    {years.map((year) => (
+                      <option
+                        key={year}
+                        value={year}
+                        className="bg-[var(--theme-bg)] text-current"
+                      >
+                        {year}
+                      </option>
                     ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronRight className="w-5 h-5 text-zinc-400 rotate-90" />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
+              {genreMovies.map((movie) => (
+                <MovieCard key={movie.id} movie={movie} />
               ))}
             </div>
 

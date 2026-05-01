@@ -63,20 +63,36 @@ export const tmdbService = {
     genreId: number | string,
     page: number = 1,
     type: "movie" | "tv" = "movie",
+    year?: string,
   ) => {
     let actualGenreId = genreId.toString();
     const isAnime = actualGenreId === "anime";
     if (isAnime) actualGenreId = "16"; // 16 is Animation in TMDB
-    
-    return fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+
+    const params: Record<string, string> = {
       with_genres: actualGenreId,
       page: page.toString(),
-      sort_by:
-        type === "movie" ? "primary_release_date.desc" : "first_air_date.desc",
+      sort_by: "vote_average.desc",
+      "vote_count.gte": "300",
       [type === "movie" ? "primary_release_date.lte" : "first_air_date.lte"]:
         new Date().toISOString().split("T")[0],
       with_original_language: isAnime ? "ja" : "en|hi",
-    });
+    };
+
+    if (year) {
+      if (type === "movie") {
+        params.primary_release_year = year;
+        delete params["primary_release_date.lte"]; // the lte date might interfere
+      } else {
+        params.first_air_date_year = year;
+        delete params["first_air_date.lte"];
+      }
+    }
+
+    return fetchTMDB<{ results: any[]; total_pages: number }>(
+      `/discover/${type}`,
+      params,
+    );
   },
   getSimilarMovies: (id: string | number) =>
     fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
