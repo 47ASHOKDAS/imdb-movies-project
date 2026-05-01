@@ -55,12 +55,22 @@
   .glass-card {
     @apply backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl;
   }
+  .light .glass-card {
+    @apply bg-black/5 border-black/10;
+  }
 
   .glass-nav {
     @apply backdrop-blur-3xl bg-obsidian/80 border-b border-white/5;
   }
   .light .glass-nav {
-    @apply bg-white/80 border-black/5;
+    @apply bg-zinc-50/80 border-black/5;
+  }
+
+  .glass-dropdown {
+    @apply backdrop-blur-[40px] bg-obsidian/80 border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.5)];
+  }
+  .light .glass-dropdown {
+    @apply bg-white/90 border-black/10 shadow-[0_30px_60px_rgba(0,0,0,0.1)];
   }
 
   .bg-grid-white {
