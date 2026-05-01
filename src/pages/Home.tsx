@@ -141,9 +141,15 @@ const Home = ({ type = "movie" }: HomeProps) => {
     );
   }
 
-  const Section = ({ title, movies }: { title: string; movies: Movie[] }) => {
-    const [showAll, setShowAll] = React.useState(false);
-    
+  const Section = ({
+    title,
+    movies,
+    slug,
+  }: {
+    title: string;
+    movies: Movie[];
+    slug: string;
+  }) => {
     return (
       <div className="mb-16">
         <div className="flex items-center justify-between mb-8">
@@ -153,17 +159,17 @@ const Home = ({ type = "movie" }: HomeProps) => {
               {title}
             </h2>
           </div>
-          {!showAll && movies.length > 10 && (
-            <button
-              onClick={() => setShowAll(true)}
-              className="text-sm font-semibold tracking-wide text-brand hover:text-brand/80 transition-colors cursor-pointer outline-none"
+          {movies.length > 0 && (
+            <Link
+              to={`/category/${type}/${slug}`}
+              className="text-sm font-semibold tracking-wide text-brand hover:text-brand/80 transition-colors"
             >
               View All
-            </button>
+            </Link>
           )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
-          {movies.slice(0, showAll ? movies.length : 10).map((movie: Movie) => (
+          {movies.slice(0, 10).map((movie: Movie) => (
             <MovieCard key={movie.id} movie={movie} />
           ))}
         </div>
@@ -189,11 +195,11 @@ const Home = ({ type = "movie" }: HomeProps) => {
       <main className="flex-grow w-full">
         {selectedGenre === "all" ? (
           <div className="pt-28 px-6 md:px-12 pb-20 relative z-20">
-            <Section title="Trending Now" movies={trending} />
+            <Section title="Trending Now" movies={trending} slug="trending" />
 
-            <Section title="Popular" movies={popular} />
+            <Section title="Popular" movies={popular} slug="popular" />
 
-            <Section title="Top Rated" movies={topRated} />
+            <Section title="Top Rated" movies={topRated} slug="top_rated" />
           </div>
         ) : (
           <div className="pt-32 px-8 md:px-12 pb-20">

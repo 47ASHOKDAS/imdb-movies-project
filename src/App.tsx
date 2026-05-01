@@ -1,17 +1,18 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async';
-import { ThemeProvider } from './context/ThemeContext';
-import { WatchlistProvider } from './context/WatchlistContext';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
-import Home from './pages/Home';
-import Search from './pages/Search';
-import MovieDetail from './pages/MovieDetail';
-import PersonDetail from './pages/PersonDetail';
-import Watchlist from './pages/Watchlist';
-import SetupGuide from './components/layout/SetupGuide';
-import FloatingActions from './components/layout/FloatingActions';
-import { tmdbService } from './services/tmdb';
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
+import { ThemeProvider } from "./context/ThemeContext";
+import { WatchlistProvider } from "./context/WatchlistContext";
+import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
+import Home from "./pages/Home";
+import Search from "./pages/Search";
+import MovieDetail from "./pages/MovieDetail";
+import PersonDetail from "./pages/PersonDetail";
+import Watchlist from "./pages/Watchlist";
+import Category from "./pages/Category";
+import SetupGuide from "./components/layout/SetupGuide";
+import FloatingActions from "./components/layout/FloatingActions";
+import { tmdbService } from "./services/tmdb";
 
 export default function App() {
   const isConfigured = tmdbService.isConfigured;
@@ -27,16 +28,20 @@ export default function App() {
                 {!isConfigured ? (
                   <SetupGuide />
                 ) : (
-            <Routes>
-              <Route path="/" element={<Home type="movie" />} />
-              <Route path="/movies" element={<Home type="movie" />} />
-              <Route path="/tv" element={<Home type="tv" />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/movie/:id" element={<MovieDetail />} />
-              <Route path="/tv/:id" element={<MovieDetail />} />
-              <Route path="/person/:id" element={<PersonDetail />} />
-              <Route path="/watchlist" element={<Watchlist />} />
-            </Routes>
+                  <Routes>
+                    <Route path="/" element={<Home type="movie" />} />
+                    <Route path="/movies" element={<Home type="movie" />} />
+                    <Route path="/tv" element={<Home type="tv" />} />
+                    <Route
+                      path="/category/:type/:slug"
+                      element={<Category />}
+                    />
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/movie/:id" element={<MovieDetail />} />
+                    <Route path="/tv/:id" element={<MovieDetail />} />
+                    <Route path="/person/:id" element={<PersonDetail />} />
+                    <Route path="/watchlist" element={<Watchlist />} />
+                  </Routes>
                 )}
               </main>
               <Footer />
