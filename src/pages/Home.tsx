@@ -17,6 +17,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
   const [trending, setTrending] = useState<Movie[]>([]);
   const [topRated, setTopRated] = useState<Movie[]>([]);
   const [popular, setPopular] = useState<Movie[]>([]);
+  const [upcoming, setUpcoming] = useState<Movie[]>([]);
   const [genreMovies, setGenreMovies] = useState<Movie[]>([]);
   const [selectedGenre, setSelectedGenre] = useState("all");
   const [page, setPage] = useState(1);
@@ -40,14 +41,17 @@ const Home = ({ type = "movie" }: HomeProps) => {
     const fetchInitialData = async () => {
       setLoading(true);
       try {
-        const [trendingRes, topRatedRes, popularRes] = await Promise.all([
-          tmdbService.getTrending(type),
-          tmdbService.getTopRated(type),
-          tmdbService.getPopular(type),
-        ]);
+        const [trendingRes, topRatedRes, popularRes, upcomingRes] =
+          await Promise.all([
+            tmdbService.getTrending(type),
+            tmdbService.getTopRated(type),
+            tmdbService.getPopular(type),
+            tmdbService.getUpcoming(type),
+          ]);
         setTrending(trendingRes.results);
         setTopRated(topRatedRes.results);
         setPopular(popularRes.results);
+        setUpcoming(upcomingRes.results);
       } catch (error) {
         console.error("Error fetching movies:", error);
       } finally {
@@ -198,6 +202,8 @@ const Home = ({ type = "movie" }: HomeProps) => {
             <Section title="Trending Now" movies={trending} slug="trending" />
 
             <Section title="Popular" movies={popular} slug="popular" />
+
+            <Section title="Upcoming" movies={upcoming} slug="upcoming" />
 
             <Section title="Top Rated" movies={topRated} slug="top_rated" />
           </div>

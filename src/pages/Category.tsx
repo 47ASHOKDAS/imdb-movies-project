@@ -12,6 +12,8 @@ const getCategoryTitle = (slug: string) => {
       return "Trending Now";
     case "popular":
       return "Popular";
+    case "upcoming":
+      return "Upcoming";
     case "top_rated":
       return "Top Rated";
     default:
@@ -36,6 +38,8 @@ const Category = () => {
         return await tmdbService.getTrending(type, pageNum);
       case "popular":
         return await tmdbService.getPopular(type, pageNum);
+      case "upcoming":
+        return await tmdbService.getUpcoming(type, pageNum);
       case "top_rated":
         return await tmdbService.getTopRated(type, pageNum);
       default:

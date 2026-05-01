@@ -1,9 +1,12 @@
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
-async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
+async function fetchTMDB<T>(
+  endpoint: string,
+  params: Record<string, string> = {},
+): Promise<T> {
   if (!TMDB_API_KEY) {
-    throw new Error('VITE_TMDB_API_KEY is not set');
+    throw new Error("VITE_TMDB_API_KEY is not set");
   }
 
   const queryParams = new URLSearchParams({
@@ -20,43 +23,84 @@ async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {
 
 export const tmdbService = {
   isConfigured: !!TMDB_API_KEY,
-  getTrending: (type: 'movie' | 'tv' = 'movie', page: number = 1) => fetchTMDB<{ results: any[], total_pages: number }>(`/discover/${type}`, { 
-    sort_by: 'popularity.desc', 
-    [type === 'movie' ? 'primary_release_date.gte' : 'first_air_date.gte']: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    with_original_language: 'en|hi',
-    page: page.toString()
-  }),
-  getPopular: (type: 'movie' | 'tv' = 'movie', page: number = 1) => fetchTMDB<{ results: any[], total_pages: number }>(`/discover/${type}`, { sort_by: 'popularity.desc', with_original_language: 'en|hi', page: page.toString() }),
-  getTopRated: (type: 'movie' | 'tv' = 'movie', page: number = 1) => fetchTMDB<{ results: any[], total_pages: number }>(`/discover/${type}`, { sort_by: 'vote_average.desc', 'vote_count.gte': '1000', without_genres: '99,10755', with_original_language: 'en|hi', page: page.toString() }),
-  getMoviesByGenre: (genreId: number | string, page: number = 1, type: 'movie' | 'tv' = 'movie') => 
-    fetchTMDB<{ results: any[], total_pages: number }>(
-      `/discover/${type}`, 
-      { 
-        with_genres: genreId.toString(), 
-        page: page.toString(),
-        sort_by: type === 'movie' ? 'primary_release_date.desc' : 'first_air_date.desc',
-        [type === 'movie' ? 'primary_release_date.lte' : 'first_air_date.lte']: new Date().toISOString().split('T')[0],
-        with_original_language: 'en|hi'
-      }
-    ),
-  getSimilarMovies: (id: string | number) => fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
-  getPersonDetails: (id: string | number) => fetchTMDB<any>(`/person/${id}`, { append_to_response: 'movie_credits' }),
+  getTrending: (type: "movie" | "tv" = "movie", page: number = 1) =>
+    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+      sort_by: "popularity.desc",
+      [type === "movie" ? "primary_release_date.gte" : "first_air_date.gte"]:
+        new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+      with_original_language: "en|hi",
+      page: page.toString(),
+    }),
+  getPopular: (type: "movie" | "tv" = "movie", page: number = 1) =>
+    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+      sort_by: "popularity.desc",
+      with_original_language: "en|hi",
+      page: page.toString(),
+    }),
+  getUpcoming: (type: "movie" | "tv" = "movie", page: number = 1) =>
+    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+      sort_by: "popularity.desc",
+      [type === "movie" ? "primary_release_date.gte" : "first_air_date.gte"]:
+        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      with_original_language: "en|hi",
+      page: page.toString(),
+    }),
+  getTopRated: (type: "movie" | "tv" = "movie", page: number = 1) =>
+    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+      sort_by: "vote_average.desc",
+      "vote_count.gte": "1000",
+      without_genres: "99,10755",
+      with_original_language: "en|hi",
+      page: page.toString(),
+    }),
+  getMoviesByGenre: (
+    genreId: number | string,
+    page: number = 1,
+    type: "movie" | "tv" = "movie",
+  ) =>
+    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+      with_genres: genreId.toString(),
+      page: page.toString(),
+      sort_by:
+        type === "movie" ? "primary_release_date.desc" : "first_air_date.desc",
+      [type === "movie" ? "primary_release_date.lte" : "first_air_date.lte"]:
+        new Date().toISOString().split("T")[0],
+      with_original_language: "en|hi",
+    }),
+  getSimilarMovies: (id: string | number) =>
+    fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
+  getPersonDetails: (id: string | number) =>
+    fetchTMDB<any>(`/person/${id}`, { append_to_response: "movie_credits" }),
   searchMovies: async (query: string) => {
-    const data = await fetchTMDB<{ results: any[] }>('/search/movie', { query });
+    const data = await fetchTMDB<{ results: any[] }>("/search/movie", {
+      query,
+    });
     return {
       ...data,
-      results: data.results.filter(m => m.original_language === 'en' || m.original_language === 'hi')
+      results: data.results.filter(
+        (m) => m.original_language === "en" || m.original_language === "hi",
+      ),
     };
   },
-  getMovieDetails: (id: string | number) => 
-    fetchTMDB<any>(`/movie/${id}`, { append_to_response: 'credits,videos,watch/providers' }),
+  getMovieDetails: (id: string | number) =>
+    fetchTMDB<any>(`/movie/${id}`, {
+      append_to_response: "credits,videos,watch/providers",
+    }),
   getMovieByImdbId: async (imdbId: string) => {
-    const searchResult = await fetchTMDB<{ movie_results: any[] }>(`/find/${imdbId}`, { external_source: 'imdb_id' });
+    const searchResult = await fetchTMDB<{ movie_results: any[] }>(
+      `/find/${imdbId}`,
+      { external_source: "imdb_id" },
+    );
     if (searchResult.movie_results.length > 0) {
       return searchResult.movie_results[0];
     }
     return null;
   },
-  getImageUrl: (path: string | null, size: 'w92' | 'w185' | 'w342' | 'w500' | 'w780' | 'original' = 'w500') => 
-    path ? `https://image.tmdb.org/t/p/${size}${path}` : '/placeholder.jpg',
+  getImageUrl: (
+    path: string | null,
+    size: "w92" | "w185" | "w342" | "w500" | "w780" | "original" = "w500",
+  ) =>
+    path ? `https://image.tmdb.org/t/p/${size}${path}` : "/placeholder.jpg",
 };
