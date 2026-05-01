@@ -33,6 +33,18 @@ export const tmdbService = {
       with_original_language: "en|hi",
       page: page.toString(),
     }),
+  getBollywood: (type: "movie" | "tv" = "movie", page: number = 1) =>
+    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+      sort_by: "popularity.desc",
+      with_original_language: "hi",
+      page: page.toString(),
+    }),
+  getHollywood: (type: "movie" | "tv" = "movie", page: number = 1) =>
+    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+      sort_by: "popularity.desc",
+      with_original_language: "en",
+      page: page.toString(),
+    }),
   getPopular: (type: "movie" | "tv" = "movie", page: number = 1) =>
     fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
       sort_by: "popularity.desc",
@@ -71,18 +83,22 @@ export const tmdbService = {
     });
     return {
       ...data,
-      results: data.results.filter(
-        (m) => (m.media_type === "movie" || m.media_type === "tv") && (m.original_language === "en" || m.original_language === "hi")
-      ).map(m => {
-        if (m.media_type === "tv") {
-          return {
-            ...m,
-            title: m.name,
-            release_date: m.first_air_date
+      results: data.results
+        .filter(
+          (m) =>
+            (m.media_type === "movie" || m.media_type === "tv") &&
+            (m.original_language === "en" || m.original_language === "hi"),
+        )
+        .map((m) => {
+          if (m.media_type === "tv") {
+            return {
+              ...m,
+              title: m.name,
+              release_date: m.first_air_date,
+            };
           }
-        }
-        return m;
-      }),
+          return m;
+        }),
     };
   },
   getMovieDetails: (id: string | number) =>

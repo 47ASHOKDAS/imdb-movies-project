@@ -14,6 +14,10 @@ const getCategoryTitle = (slug: string) => {
       return "Popular";
     case "top_rated":
       return "Top Rated";
+    case "bollywood":
+      return "Bollywood";
+    case "hollywood":
+      return "Hollywood";
     default:
       return "Category";
   }
@@ -38,6 +42,10 @@ const Category = () => {
         return await tmdbService.getPopular(type, pageNum);
       case "top_rated":
         return await tmdbService.getTopRated(type, pageNum);
+      case "bollywood":
+        return await tmdbService.getBollywood(type, pageNum);
+      case "hollywood":
+        return await tmdbService.getHollywood(type, pageNum);
       default:
         return await tmdbService.getTrending(type, pageNum);
     }
