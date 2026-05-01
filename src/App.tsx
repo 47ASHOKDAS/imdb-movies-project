@@ -27,13 +27,16 @@ export default function App() {
                 {!isConfigured ? (
                   <SetupGuide />
                 ) : (
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/search" element={<Search />} />
-                    <Route path="/movie/:id" element={<MovieDetail />} />
-                    <Route path="/person/:id" element={<PersonDetail />} />
-                    <Route path="/watchlist" element={<Watchlist />} />
-                  </Routes>
+            <Routes>
+              <Route path="/" element={<Home type="movie" />} />
+              <Route path="/movies" element={<Home type="movie" />} />
+              <Route path="/tv" element={<Home type="tv" />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/movie/:id" element={<MovieDetail />} />
+              <Route path="/tv/:id" element={<MovieDetail />} />
+              <Route path="/person/:id" element={<PersonDetail />} />
+              <Route path="/watchlist" element={<Watchlist />} />
+            </Routes>
                 )}
               </main>
               <Footer />

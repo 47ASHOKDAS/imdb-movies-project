@@ -42,8 +42,8 @@ const Navbar: React.FC = () => {
         <div className="flex items-center gap-8 hidden lg:flex">
           {[
             { name: 'Home', path: '/' },
-            { name: 'Movies', path: '/' },
-            { name: 'TV Shows', path: '/' },
+            { name: 'Movies', path: '/movies' },
+            { name: 'TV Shows', path: '/tv' },
             { name: 'Watchlist', path: '/watchlist', icon: Bookmark }
           ].map((link) => (
             <Link 
@@ -51,12 +51,12 @@ const Navbar: React.FC = () => {
               to={link.path} 
               className={cn(
                 "text-sm font-semibold transition-all duration-300 relative group flex items-center gap-2",
-                location.pathname === link.path && link.name === 'Home' ? "text-white" : "text-zinc-400 hover:text-white"
+                location.pathname === link.path ? "text-white" : "text-zinc-400 hover:text-white"
               )}
             >
               {link.icon && <link.icon className="w-4 h-4" />}
               {link.name}
-              {location.pathname === link.path && link.name === 'Home' && (
+              {location.pathname === link.path && (
                 <div className="absolute -bottom-6 left-0 right-0 h-[2px] bg-brand rounded-t-full shadow-[0_-2px_10px_rgba(139,92,246,0.8)]" />
               )}
             </Link>

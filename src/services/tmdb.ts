@@ -20,21 +20,21 @@ async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {
 
 export const tmdbService = {
   isConfigured: !!TMDB_API_KEY,
-  getTrending: () => fetchTMDB<{ results: any[] }>('/discover/movie', { 
+  getTrending: (type: 'movie' | 'tv' = 'movie') => fetchTMDB<{ results: any[] }>(`/discover/${type}`, { 
     sort_by: 'popularity.desc', 
-    'primary_release_date.gte': new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    [type === 'movie' ? 'primary_release_date.gte' : 'first_air_date.gte']: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     with_original_language: 'en|hi'
   }),
-  getPopular: () => fetchTMDB<{ results: any[] }>('/discover/movie', { sort_by: 'popularity.desc', with_original_language: 'en|hi' }),
-  getTopRated: () => fetchTMDB<{ results: any[] }>('/discover/movie', { sort_by: 'vote_average.desc', 'vote_count.gte': '1000', without_genres: '99,10755', with_original_language: 'en|hi' }),
-  getMoviesByGenre: (genreId: number | string, page: number = 1) => 
+  getPopular: (type: 'movie' | 'tv' = 'movie') => fetchTMDB<{ results: any[] }>(`/discover/${type}`, { sort_by: 'popularity.desc', with_original_language: 'en|hi' }),
+  getTopRated: (type: 'movie' | 'tv' = 'movie') => fetchTMDB<{ results: any[] }>(`/discover/${type}`, { sort_by: 'vote_average.desc', 'vote_count.gte': '1000', without_genres: '99,10755', with_original_language: 'en|hi' }),
+  getMoviesByGenre: (genreId: number | string, page: number = 1, type: 'movie' | 'tv' = 'movie') => 
     fetchTMDB<{ results: any[], total_pages: number }>(
-      '/discover/movie', 
+      `/discover/${type}`, 
       { 
         with_genres: genreId.toString(), 
         page: page.toString(),
-        sort_by: 'primary_release_date.desc',
-        'primary_release_date.lte': new Date().toISOString().split('T')[0], // Only show released or upcoming up to today
+        sort_by: type === 'movie' ? 'primary_release_date.desc' : 'first_air_date.desc',
+        [type === 'movie' ? 'primary_release_date.lte' : 'first_air_date.lte']: new Date().toISOString().split('T')[0],
         with_original_language: 'en|hi'
       }
     ),

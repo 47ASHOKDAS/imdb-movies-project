@@ -40,7 +40,7 @@ const Hero: React.FC<HeroProps> = ({ movie }) => {
         >
           <img
             src={tmdbService.getImageUrl(movie.backdrop_path, 'original')}
-            alt={movie.title}
+            alt={movie.title || movie.name}
             className="w-full h-full object-cover brightness-[0.4]"
           />
           {/* Left Edge Fade for content readability */}
@@ -73,7 +73,7 @@ const Hero: React.FC<HeroProps> = ({ movie }) => {
               className="text-5xl md:text-8xl font-display font-black tracking-tighter text-[#e50914] mb-6 leading-[0.85] uppercase drop-shadow-2xl"
               style={{ WebkitTextStroke: '1px rgba(255,0,0,0.3)' }}
             >
-              {movie.title}
+              {movie.title || movie.name}
             </motion.h1>
 
             <motion.p 

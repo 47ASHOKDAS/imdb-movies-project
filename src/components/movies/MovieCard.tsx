@@ -66,10 +66,10 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, className }) => {
 
       <div className="flex flex-col">
         <h3 className="text-white text-sm font-semibold truncate group-hover:text-brand transition-colors">
-          {movie.title}
+          {movie.title || movie.name}
         </h3>
         <span className="text-zinc-500 text-xs font-medium">
-          {movie.release_date?.split('-')[0] || 'Unknown'}
+          {(movie.release_date || movie.first_air_date)?.split('-')[0] || 'Unknown'}
         </span>
       </div>
     </motion.div>

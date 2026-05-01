@@ -10,7 +10,11 @@ import { TrendingUp, Star, Zap, ChevronRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
-const Home: React.FC = () => {
+interface HomeProps {
+  type?: 'movie' | 'tv';
+}
+
+const Home: React.FC<HomeProps> = ({ type = 'movie' }) => {
   const [trending, setTrending] = useState<Movie[]>([]);
   const [topRated, setTopRated] = useState<Movie[]>([]);
   const [actionMovies, setActionMovies] = useState<Movie[]>([]);
@@ -25,7 +29,8 @@ const Home: React.FC = () => {
   const groupMoviesByYear = (movies: Movie[]) => {
     const groups: { [key: string]: Movie[] } = {};
     movies.forEach(movie => {
-      const year = movie.release_date ? movie.release_date.split('-')[0] : 'Unknown';
+      const dateString = movie.release_date || movie.first_air_date;
+      const year = dateString ? dateString.split('-')[0] : 'Unknown';
       if (!groups[year]) groups[year] = [];
       groups[year].push(movie);
     });
@@ -37,9 +42,9 @@ const Home: React.FC = () => {
       setLoading(true);
       try {
         const [trendingRes, topRatedRes, actionRes] = await Promise.all([
-          tmdbService.getTrending(),
-          tmdbService.getTopRated(),
-          tmdbService.getMoviesByGenre(28)
+          tmdbService.getTrending(type),
+          tmdbService.getTopRated(type),
+          tmdbService.getMoviesByGenre(28, 1, type)
         ]);
         setTrending(trendingRes.results);
         setTopRated(topRatedRes.results);
@@ -51,7 +56,7 @@ const Home: React.FC = () => {
       }
     };
     if (selectedGenre === 'all') fetchInitialData();
-  }, [selectedGenre]);
+  }, [selectedGenre, type]);
 
   useEffect(() => {
     if (selectedGenre === 'all') return;
@@ -63,7 +68,7 @@ const Home: React.FC = () => {
       setGenreMovies([]); // Clear previous category movies
       setPage(1);
       try {
-        const res = await tmdbService.getMoviesByGenre(selectedGenre, 1);
+        const res = await tmdbService.getMoviesByGenre(selectedGenre, 1, type);
         if (isMounted) {
           setGenreMovies(res.results);
           setPage(1);
@@ -79,7 +84,7 @@ const Home: React.FC = () => {
     window.scrollTo(0, 0);
 
     return () => { isMounted = false; };
-  }, [selectedGenre]);
+  }, [selectedGenre, type]);
 
   const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore || selectedGenre === 'all') return;
@@ -87,7 +92,7 @@ const Home: React.FC = () => {
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const res = await tmdbService.getMoviesByGenre(selectedGenre, nextPage);
+      const res = await tmdbService.getMoviesByGenre(selectedGenre, nextPage, type);
       setGenreMovies(prev => {
         const existingIds = new Set(prev.map(m => m.id));
         const newMovies = res.results.filter(m => !existingIds.has(m.id));
