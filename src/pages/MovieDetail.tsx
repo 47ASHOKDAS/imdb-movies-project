@@ -140,33 +140,34 @@ const MovieDetail: React.FC = () => {
         type="video.movie"
       />
       {/* Cinematic Header Background */}
-      <div className="relative h-[70vh] w-full overflow-hidden">
+      <div className="fixed top-0 left-0 right-0 h-[80vh] w-full overflow-hidden z-0 pointer-events-none">
         <motion.img
-          initial={{ scale: 1.2, opacity: 0 }}
+          initial={{ scale: 1.1, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.2 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
           src={tmdbService.getImageUrl(movie.backdrop_path, "original")}
           alt={movie.title}
-          className="w-full h-full object-cover brightness-[0.3]"
+          className="w-full h-full object-cover brightness-[0.25] transform-gpu will-change-[transform,opacity]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-obsidian via-obsidian/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--theme-bg)] via-transparent to-[var(--theme-bg)]/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--theme-bg)] via-transparent to-[var(--theme-bg)]/20" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 -mt-96 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 pt-32 md:pt-48 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-16">
           {/* Left: Poster & Rating */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
             className="lg:col-span-4"
           >
-            <div className="relative group mx-auto max-w-sm lg:max-w-none">
+            <div className="relative group mx-auto max-w-sm lg:max-w-none transform-gpu transition-transform duration-500 hover:scale-[1.02]">
               <div className="absolute -inset-4 bg-brand/30 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               <img
                 src={tmdbService.getImageUrl(movie.poster_path, "w500")}
                 alt={movie.title}
-                className="w-full rounded-[2rem] shadow-2xl relative z-10 border border-white/10"
+                className="w-full rounded-[2rem] shadow-2xl relative z-10 border border-current/10"
               />
               <motion.button
                 whileHover={{ scale: 1.1 }}
@@ -174,41 +175,38 @@ const MovieDetail: React.FC = () => {
                 onClick={() => setShowTrailer(true)}
                 className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem] z-20"
               >
-                <div className="w-20 h-20 bg-brand rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.6)]">
-                  <Play className="w-10 h-10 text-current fill-current ml-2" />
+                <div className="w-20 h-20 bg-brand rounded-full flex items-center justify-center shadow-[0_0_30px_var(--color-brand)]">
+                  <Play className="w-10 h-10 text-white fill-current ml-2" />
                 </div>
               </motion.button>
             </div>
 
-            <div className="mt-10 p-8 glass-card rounded-[2rem] space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="text-zinc-400 text-xs font-black uppercase tracking-widest">
+            <div className="mt-8 grid grid-cols-2 gap-4">
+              <div className="glass-card rounded-[1.5rem] p-6 flex flex-col items-center justify-center text-center group transition-all hover:bg-current/5">
+                <div className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2 group-hover:text-gold transition-colors">
                   IMDb Score
                 </div>
                 <div className="flex items-center gap-1.5 text-gold">
-                  <Star className="w-5 h-5 fill-current" />
-                  <span className="text-xl font-display font-black text-current">
+                  <Star className="w-6 h-6 fill-current drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                  <span className="text-3xl font-display font-black text-current">
                     {movie.vote_average.toFixed(1)}
                   </span>
                 </div>
               </div>
-              {omdbData && (
-                <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                  <div className="text-zinc-400 text-xs font-black uppercase tracking-widest">
-                    Metascore
-                  </div>
-                  <div
-                    className={cn(
-                      "px-3 py-1 rounded text-sm font-black text-white",
-                      parseInt(omdbData.Metascore) > 75
-                        ? "bg-green-500"
-                        : "bg-gold",
-                    )}
-                  >
-                    {omdbData.Metascore}
-                  </div>
+
+              <div className="glass-card rounded-[1.5rem] p-6 flex flex-col items-center justify-center text-center group transition-all hover:bg-current/5">
+                <div className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2 group-hover:text-brand transition-colors">
+                  Status
                 </div>
-              )}
+                <div className="text-sm font-bold text-current uppercase tracking-wider">
+                  {movie.status || "Released"}
+                </div>
+                {movie.release_date && (
+                  <div className="text-xs text-zinc-500 mt-1 font-medium">
+                    {movie.release_date.split("-")[0]}
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -216,75 +214,75 @@ const MovieDetail: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-8 flex flex-col justify-end"
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+            className="lg:col-span-8 flex flex-col justify-center"
           >
             <div className="flex flex-wrap items-center gap-3 mb-6">
               {movie.genres.map((genre) => (
                 <span
                   key={genre.id}
-                  className="bg-brand/10 border border-brand/30 text-current text-[10px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full"
+                  className="bg-brand/10 border border-brand/30 text-brand text-[10px] font-black tracking-widest uppercase px-4 py-2 rounded-full transition-all hover:bg-brand hover:text-white"
                 >
                   {genre.name}
                 </span>
               ))}
-              <span className="bg-white/5 border border-white/10 text-zinc-400 text-[10px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full flex items-center gap-2">
+              <span className="glass-card border-current/10 text-zinc-500 text-[10px] font-black tracking-widest uppercase px-4 py-2 rounded-full flex items-center gap-2">
                 <Clock className="w-3 h-3" />
                 {movie.runtime}m
               </span>
             </div>
 
-            <h1 className="text-5xl md:text-8xl font-display font-black tracking-tighter leading-[0.8] mb-6 uppercase">
+            <h1 className="text-5xl md:text-7xl font-display font-black tracking-tighter leading-[0.9] mb-4 uppercase text-current neon-text-glow">
               {movie.title}
             </h1>
 
-            <p className="text-xl text-zinc-300 leading-relaxed max-w-3xl mb-12 font-medium opacity-80 italic">
-              "{movie.tagline}"
-            </p>
+            {movie.tagline && (
+              <p className="text-xl md:text-2xl text-brand leading-relaxed max-w-3xl mb-10 font-medium italic drop-shadow-md">
+                "{movie.tagline}"
+              </p>
+            )}
 
-            <div className="flex flex-col gap-6 mb-16">
-              <div className="flex flex-wrap items-center gap-4">
-                <button
-                  onClick={handleWatchNow}
-                  className="btn-neon min-w-[200px] flex items-center justify-center gap-3"
-                >
-                  <Play className="w-5 h-5 fill-current" />
-                  WATCH NOW
-                </button>
-                <button
-                  onClick={() =>
-                    inWatchlist
-                      ? removeFromWatchlist(movie.id)
-                      : addToWatchlist(movie)
-                  }
-                  className={cn(
-                    "btn-glass min-w-[200px] flex items-center justify-center gap-3",
-                    inWatchlist
-                      ? "text-brand border-brand/40 bg-brand/5 scale-105"
-                      : "",
-                  )}
-                >
-                  {inWatchlist ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />
-                  )}
-                  {inWatchlist ? "IN WATCHLIST" : "WATCHLIST"}
-                </button>
-                <button className="btn-glass p-4 rounded-xl">
-                  <Share2 className="w-5 h-5" />
-                </button>
-              </div>
+            <div className="flex flex-wrap items-center gap-4 mb-12">
+              <button
+                onClick={handleWatchNow}
+                className="btn-neon min-w-[220px] flex items-center justify-center gap-3 text-lg py-4"
+              >
+                <Play className="w-6 h-6 fill-current" />
+                WATCH NOW
+              </button>
+              <button
+                onClick={() =>
+                  inWatchlist
+                    ? removeFromWatchlist(movie.id)
+                    : addToWatchlist(movie)
+                }
+                className={cn(
+                  "btn-glass min-w-[200px] flex items-center justify-center gap-3 text-sm py-4",
+                  inWatchlist
+                    ? "text-brand border-brand/40 bg-brand/5 scale-[1.02]"
+                    : "",
+                )}
+              >
+                {inWatchlist ? (
+                  <Check className="w-5 h-5" />
+                ) : (
+                  <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />
+                )}
+                {inWatchlist ? "IN WATCHLIST" : "ADD TO LIST"}
+              </button>
+              <button className="btn-glass p-4 rounded-xl aspect-square flex items-center justify-center">
+                <Share2 className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div>
-                <h3 className="text-xs font-black uppercase text-brand tracking-[0.3em] mb-6">
-                  Storyline
-                </h3>
-                <p className="text-zinc-400 leading-relaxed text-lg font-medium">
-                  {movie.overview}
-                </p>
-              </div>
+            <div className="glass-card rounded-[2rem] p-8 md:p-10 border-current/10 bg-current/5">
+              <h3 className="text-xs font-black uppercase text-brand tracking-[0.3em] mb-6 flex items-center gap-2">
+                <div className="w-8 h-[2px] bg-brand/50"></div>
+                Storyline
+              </h3>
+              <p className="text-zinc-400 group-hover:text-current transition-colors leading-relaxed text-lg md:text-xl font-medium">
+                {movie.overview}
+              </p>
             </div>
           </motion.div>
         </div>
@@ -363,7 +361,7 @@ const MovieDetail: React.FC = () => {
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 50 }}
-              className="relative z-10 w-full max-w-6xl aspect-video rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 bg-black"
+              className="relative z-10 w-full max-w-6xl aspect-video rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-current/10 bg-black"
             >
               <iframe
                 src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1`}
@@ -374,7 +372,7 @@ const MovieDetail: React.FC = () => {
               />
               <button
                 onClick={() => setShowTrailer(false)}
-                className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors"
+                className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors text-white"
               >
                 <Plus className="w-8 h-8 rotate-45" />
               </button>
@@ -400,11 +398,11 @@ const MovieDetail: React.FC = () => {
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 50 }}
-              className="relative z-10 w-full max-w-lg glass-card rounded-[2rem] p-8 border border-white/10"
+              className="relative z-10 w-full max-w-lg glass-card rounded-[2rem] p-8 border border-current/10"
             >
               <button
                 onClick={() => setShowServerModal(false)}
-                className="absolute top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors shadow-lg shadow-black/20"
+                className="absolute top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors shadow-lg shadow-black/20 text-current"
               >
                 <Plus className="w-6 h-6 rotate-45" />
               </button>
@@ -438,7 +436,7 @@ const MovieDetail: React.FC = () => {
                           Season
                         </label>
                         <select
-                          className="w-full bg-white/5 border border-white/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 overflow-hidden appearance-none"
+                          className="w-full bg-current/5 border border-current/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-current/10 overflow-hidden appearance-none"
                           value={selectedSeason}
                           onChange={(e) => {
                             setSelectedSeason(Number(e.target.value));
@@ -449,7 +447,7 @@ const MovieDetail: React.FC = () => {
                             <option
                               key={s.season_number}
                               value={s.season_number}
-                              className="bg-obsidian"
+                              className="bg-[var(--theme-bg)]"
                             >
                               {s.name || `Season ${s.season_number}`}
                             </option>
@@ -461,7 +459,7 @@ const MovieDetail: React.FC = () => {
                           Episode
                         </label>
                         <select
-                          className="w-full bg-white/5 border border-white/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 appearance-none"
+                          className="w-full bg-current/5 border border-current/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-current/10 appearance-none"
                           value={selectedEpisode}
                           onChange={(e) =>
                             setSelectedEpisode(Number(e.target.value))
@@ -471,7 +469,7 @@ const MovieDetail: React.FC = () => {
                             <option
                               key={i + 1}
                               value={i + 1}
-                              className="bg-obsidian"
+                              className="bg-[var(--theme-bg)]"
                             >
                               Episode {i + 1}
                             </option>
@@ -489,7 +487,7 @@ const MovieDetail: React.FC = () => {
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="font-bold text-lg group-hover:text-brand transition-colors">
+                      <span className="font-bold text-lg group-hover:text-brand transition-colors text-current">
                         Server 1
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
@@ -504,7 +502,7 @@ const MovieDetail: React.FC = () => {
 
                 <button
                   onClick={() => handlePlayOnServer(1)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all text-left"
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-current/10 hover:border-current/20 hover:bg-current/5 transition-all text-left"
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
@@ -515,7 +513,7 @@ const MovieDetail: React.FC = () => {
                         High Quality
                       </span>
                     </div>
-                    <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white transition-colors">
+                    <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-colors">
                       <Play className="w-5 h-5 fill-current ml-1 text-current opacity-50 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>

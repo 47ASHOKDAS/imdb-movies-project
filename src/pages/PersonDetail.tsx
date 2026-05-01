@@ -89,7 +89,7 @@ const PersonDetail: React.FC = () => {
                     : "https://via.placeholder.com/500x750?text=No+Image"
                 }
                 alt={person.name}
-                className="w-full rounded-[2.5rem] shadow-2xl relative z-10 border border-white/10"
+                className="w-full rounded-[2.5rem] shadow-2xl relative z-10 border border-current/10"
               />
             </div>
 
@@ -106,7 +106,7 @@ const PersonDetail: React.FC = () => {
                       <div className="text-[10px] uppercase font-black opacity-50">
                         Born
                       </div>
-                      <div className="text-sm font-bold text-white">
+                      <div className="text-sm font-bold text-current">
                         {person.birthday}
                       </div>
                     </div>
@@ -120,7 +120,7 @@ const PersonDetail: React.FC = () => {
                       <div className="text-[10px] uppercase font-black opacity-50">
                         Birthplace
                       </div>
-                      <div className="text-sm font-bold text-white leading-tight">
+                      <div className="text-sm font-bold text-current leading-tight">
                         {person.place_of_birth}
                       </div>
                     </div>
@@ -133,7 +133,7 @@ const PersonDetail: React.FC = () => {
                     <div className="text-[10px] uppercase font-black opacity-50">
                       Popularity
                     </div>
-                    <div className="text-sm font-bold text-white">
+                    <div className="text-sm font-bold text-current">
                       {person.popularity.toFixed(1)}
                     </div>
                   </div>
