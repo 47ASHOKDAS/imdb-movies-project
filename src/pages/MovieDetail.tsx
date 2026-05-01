@@ -285,35 +285,6 @@ const MovieDetail: React.FC = () => {
                   {movie.overview}
                 </p>
               </div>
-
-              <div>
-                <h3 className="text-xs font-black uppercase text-brand tracking-[0.3em] mb-6">
-                  Where to Watch
-                </h3>
-                {providers.length > 0 ? (
-                  <div className="flex flex-wrap gap-4">
-                    {providers.slice(0, 4).map((p) => (
-                      <motion.div
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        key={p.provider_id}
-                        className="w-14 h-14 rounded-2xl overflow-hidden glass-card border-white/10 cursor-pointer shadow-xl shadow-black"
-                        onClick={handleWatchNow}
-                      >
-                        <img
-                          src={`https://image.tmdb.org/t/p/original${p.logo_path}`}
-                          title={p.provider_name}
-                          className="w-full h-full object-cover"
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 text-zinc-500 font-medium bg-white/5 p-4 rounded-2xl border border-white/5 max-w-sm">
-                    <AlertCircle className="w-5 h-5 opacity-50" />
-                    <span className="text-sm">Available soon in India</span>
-                  </div>
-                )}
-              </div>
             </div>
           </motion.div>
         </div>
@@ -449,58 +420,64 @@ const MovieDetail: React.FC = () => {
               </div>
 
               {isTv &&
-                movie.number_of_seasons &&
-                typeof selectedSeason === "number" && (
-                  <div className="flex gap-4 mb-8">
-                    <div className="flex-1 space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-zinc-500">
-                        Season
-                      </label>
-                      <select
-                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 overflow-hidden appearance-none"
-                        value={selectedSeason}
-                        onChange={(e) => {
-                          setSelectedSeason(Number(e.target.value));
-                          setSelectedEpisode(1);
-                        }}
-                      >
-                        {Array.from({ length: movie.number_of_seasons }).map(
-                          (_, i) => (
+                movie.seasons &&
+                typeof selectedSeason === "number" && (() => {
+                  const validSeasons = movie.seasons.filter((s) => s.season_number > 0);
+                  const currentSeasonData = validSeasons.find(
+                    (s) => s.season_number === selectedSeason,
+                  );
+                  const episodeCount = currentSeasonData?.episode_count || 50;
+
+                  return (
+                    <div className="flex gap-4 mb-8">
+                      <div className="flex-1 space-y-2">
+                        <label className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                          Season
+                        </label>
+                        <select
+                          className="w-full bg-white/5 border border-white/10 text-white rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 overflow-hidden appearance-none"
+                          value={selectedSeason}
+                          onChange={(e) => {
+                            setSelectedSeason(Number(e.target.value));
+                            setSelectedEpisode(1);
+                          }}
+                        >
+                          {validSeasons.map((s) => (
+                            <option
+                              key={s.season_number}
+                              value={s.season_number}
+                              className="bg-obsidian"
+                            >
+                              {s.name || `Season ${s.season_number}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <label className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                          Episode
+                        </label>
+                        <select
+                          className="w-full bg-white/5 border border-white/10 text-white rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 appearance-none"
+                          value={selectedEpisode}
+                          onChange={(e) =>
+                            setSelectedEpisode(Number(e.target.value))
+                          }
+                        >
+                          {Array.from({ length: episodeCount }).map((_, i) => (
                             <option
                               key={i + 1}
                               value={i + 1}
                               className="bg-obsidian"
                             >
-                              Season {i + 1}
+                              Episode {i + 1}
                             </option>
-                          ),
-                        )}
-                      </select>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-zinc-500">
-                        Episode
-                      </label>
-                      <select
-                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 appearance-none"
-                        value={selectedEpisode}
-                        onChange={(e) =>
-                          setSelectedEpisode(Number(e.target.value))
-                        }
-                      >
-                        {Array.from({ length: 50 }).map((_, i) => (
-                          <option
-                            key={i + 1}
-                            value={i + 1}
-                            className="bg-obsidian"
-                          >
-                            Episode {i + 1}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
               <div className="space-y-4">
                 <button

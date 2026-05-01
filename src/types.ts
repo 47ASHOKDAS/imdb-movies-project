@@ -41,6 +41,15 @@ export interface WatchProvider {
 export interface MovieDetails extends Movie {
   tagline: string | null;
   number_of_seasons?: number;
+  seasons?: {
+    air_date: string | null;
+    episode_count: number;
+    id: number;
+    name: string;
+    overview: string;
+    poster_path: string | null;
+    season_number: number;
+  }[];
   credits: {
     cast: CastMember[];
   };

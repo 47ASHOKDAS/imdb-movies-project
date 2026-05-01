@@ -9,10 +9,23 @@ import { cn } from '../../lib/utils';
 const SearchInput: React.FC = () => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Movie[]>([]);
+  const [trending, setTrending] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchTrending = async () => {
+      try {
+        const res = await tmdbService.getTrending();
+        setTrending(res.results.slice(0, 6));
+      } catch (error) {
+        console.error('Error fetching trending:', error);
+      }
+    };
+    fetchTrending();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -73,51 +86,60 @@ const SearchInput: React.FC = () => {
             <Search className="w-3.5 h-3.5" />
           </div>
           
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setIsOpen(true);
-            }}
-            onFocus={() => query.length >= 2 && setIsOpen(true)}
-            placeholder="Search movies, actors, or IMDb links..."
-            className="w-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-brand/40 focus:bg-white/10 rounded-full py-2 pl-12 pr-10 text-xs font-semibold text-white placeholder:text-zinc-500 transition-all duration-300 backdrop-blur-xl outline-none shadow-xl"
-          />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setIsOpen(true);
+              }}
+              onFocus={() => setIsOpen(true)}
+              placeholder="Search movies, actors, or IMDb links..."
+              className="w-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-brand/40 focus:bg-white/10 rounded-full py-2 pl-12 pr-10 text-xs font-semibold text-white placeholder:text-zinc-500 transition-all duration-300 backdrop-blur-xl outline-none shadow-xl"
+            />
 
-          <div className="absolute right-3 flex items-center gap-2">
-            {loading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
-            ) : query && (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                className="p-1 hover:bg-white/10 rounded-full text-zinc-500 hover:text-white transition-all"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        </div>
-      </form>
-
-      <AnimatePresence>
-        {isOpen && (query.trim().length >= 2 || suggestions.length > 0) && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute top-full left-0 right-0 mt-4 bg-obsidian/80 backdrop-blur-[40px] border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-40 p-4"
-          >
-            <div className="flex items-center gap-2 px-4 mb-4">
-              <Sparkles className="w-4 h-4 text-brand" />
-              <span className="text-[10px] font-black tracking-widest text-zinc-500 uppercase">Top results</span>
+            <div className="absolute right-3 flex items-center gap-2">
+              {loading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
+              ) : query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="p-1 hover:bg-white/10 rounded-full text-zinc-500 hover:text-white transition-all"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
+          </div>
+        </form>
 
-            <div className="space-y-2">
-              {suggestions.length > 0 ? (
-                suggestions.map((movie) => (
+        <AnimatePresence>
+          {isOpen && (query.trim().length >= 2 || trending.length > 0) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="absolute top-full left-0 right-0 mt-4 bg-obsidian/80 backdrop-blur-[40px] border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-40 p-4"
+            >
+              <div className="flex items-center gap-2 px-4 mb-4">
+                {query.trim().length >= 2 ? (
+                  <>
+                    <Sparkles className="w-4 h-4 text-brand" />
+                    <span className="text-[10px] font-black tracking-widest text-zinc-500 uppercase">Top results</span>
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="w-4 h-4 text-brand" />
+                    <span className="text-[10px] font-black tracking-widest text-zinc-500 uppercase">Trending Now</span>
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {(query.trim().length >= 2 ? suggestions : trending).length > 0 ? (
+                  (query.trim().length >= 2 ? suggestions : trending).map((movie) => (
                   <button
                     key={movie.id}
                     onClick={() => handleSelect(movie)}
