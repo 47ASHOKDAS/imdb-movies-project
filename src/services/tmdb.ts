@@ -63,16 +63,21 @@ export const tmdbService = {
     genreId: number | string,
     page: number = 1,
     type: "movie" | "tv" = "movie",
-  ) =>
-    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
-      with_genres: genreId.toString(),
+  ) => {
+    let actualGenreId = genreId.toString();
+    const isAnime = actualGenreId === "anime";
+    if (isAnime) actualGenreId = "16"; // 16 is Animation in TMDB
+    
+    return fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
+      with_genres: actualGenreId,
       page: page.toString(),
       sort_by:
         type === "movie" ? "primary_release_date.desc" : "first_air_date.desc",
       [type === "movie" ? "primary_release_date.lte" : "first_air_date.lte"]:
         new Date().toISOString().split("T")[0],
-      with_original_language: "en|hi",
-    }),
+      with_original_language: isAnime ? "ja" : "en|hi",
+    });
+  },
   getSimilarMovies: (id: string | number) =>
     fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
   getPersonDetails: (id: string | number) =>

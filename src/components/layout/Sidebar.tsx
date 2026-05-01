@@ -14,6 +14,8 @@ import {
   Tv,
   PlaySquare,
   ListVideo,
+  Sparkles,
+  Swords
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { AnimatePresence, motion } from "motion/react";
@@ -27,6 +29,8 @@ export const GENRES = [
   { id: "27", name: "Horror", icon: Ghost },
   { id: "878", name: "Sci-Fi", icon: Rocket },
   { id: "10749", name: "Romance", icon: Heart },
+  { id: "anime", name: "Anime", icon: Swords },
+  { id: "16", name: "Animated", icon: Sparkles },
 ];
 
 const NAV_LINKS = [
