@@ -31,12 +31,12 @@ const Navbar: React.FC = () => {
   return (
     <nav
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 py-4 md:px-12 flex items-center gap-10",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-4 py-4 md:px-12 flex items-center justify-between gap-2 md:gap-10",
         isScrolled ? "glass-nav py-3 shadow-2xl" : "bg-transparent",
       )}
     >
       <Link to="/" className="flex items-center group shrink-0 relative">
-        <div className="text-xl md:text-2xl font-display font-black tracking-tighter uppercase">
+        <div className="text-lg md:text-2xl font-display font-black tracking-tighter uppercase">
           <span className="text-brand drop-shadow-[0_0_15px_var(--color-brand)]">
             IMDB
           </span>
@@ -45,11 +45,11 @@ const Navbar: React.FC = () => {
       </Link>
 
       {/* Centered Global Search */}
-      <div className="flex-grow max-w-2xl hidden sm:block mx-auto">
+      <div className="flex-grow md:max-w-xl mx-2 md:mx-auto">
         <SearchInput />
       </div>
 
-      <div className="flex items-center gap-6 shrink-0">
+      <div className="flex items-center gap-2 md:gap-6 shrink-0">
         <div className="flex items-center gap-8 hidden lg:flex">
           {[
             { name: "Home", path: "/" },
