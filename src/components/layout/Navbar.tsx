@@ -21,33 +21,32 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 py-4 md:px-12 flex items-center justify-between",
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 py-4 md:px-12 flex items-center gap-10",
       isScrolled 
         ? "bg-obsidian/60 backdrop-blur-3xl border-b border-white/5 py-3 shadow-2xl" 
         : "bg-gradient-to-b from-obsidian/80 via-obsidian/20 to-transparent"
     )}>
-      <div className="flex items-center gap-10 flex-grow">
-        <Link to="/" className="flex items-center group shrink-0 relative">
-          <div className="text-xl md:text-2xl font-display font-black tracking-tighter uppercase">
-            <span className="text-brand drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]">IMDB</span>
-            <span className="text-white">flix</span>
-          </div>
-        </Link>
-
-        {/* Global Search - Slimmer max width */}
-        <div className="flex-grow max-w-lg hidden sm:block">
-          <SearchInput />
+      <Link to="/" className="flex items-center group shrink-0 relative">
+        <div className="text-xl md:text-2xl font-display font-black tracking-tighter uppercase">
+          <span className="text-brand drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]">IMDB</span>
+          <span className="text-white">flix</span>
         </div>
+      </Link>
+
+      {/* Centered Global Search */}
+      <div className="flex-grow max-w-2xl hidden sm:block mx-auto">
+        <SearchInput />
       </div>
 
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-8 mr-2 hidden md:flex">
+      <div className="flex items-center gap-6 shrink-0">
+        <div className="flex items-center gap-8 hidden lg:flex">
           {[
-            { name: 'HOME', path: '/' },
-            { name: 'WATCHLIST', path: '/watchlist' }
+            { name: 'Movies', path: '/' },
+            { name: 'TV Shows', path: '/' },
+            { name: 'Watchlist', path: '/watchlist' }
           ].map((link) => (
             <Link 
-              key={link.path}
+              key={link.name}
               to={link.path} 
               className={cn(
                 "text-[10px] font-black tracking-[0.2em] uppercase transition-all duration-300",

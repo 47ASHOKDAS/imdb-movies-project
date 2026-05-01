@@ -64,10 +64,10 @@
   background: linear-gradient(to top, #0b0b0f 0%, transparent 100%);
 }
 
-.horizontal-scroll {
+.horizontal-scroll, .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.horizontal-scroll::-webkit-scrollbar {
+.horizontal-scroll::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
