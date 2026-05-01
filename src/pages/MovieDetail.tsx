@@ -505,6 +505,7 @@ const MovieDetail: React.FC = () => {
                   className="w-full h-full"
                   allowFullScreen
                   allow="autoplay; fullscreen"
+                  sandbox="allow-same-origin allow-scripts allow-presentation"
                 />
               </div>
             </motion.div>
