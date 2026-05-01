@@ -45,14 +45,8 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, className }) => {
           {/* Rating Badge */}
           <div className="absolute top-2 right-2 z-10">
             <div className="bg-black/80 backdrop-blur-md text-[11px] font-bold px-2 py-1 rounded-md text-white border border-yellow-500/30 flex items-center gap-1 shadow-lg">
-              {movie.vote_average > 0 ? (
-                <>
-                  <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                  {movie.vote_average.toFixed(1)}
-                </>
-              ) : (
-                <span className="text-zinc-300">No Review</span>
-              )}
+              <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+              {movie.vote_average > 0 ? movie.vote_average.toFixed(1) : 'NR'}
             </div>
           </div>
 

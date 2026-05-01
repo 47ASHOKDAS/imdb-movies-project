@@ -39,14 +39,6 @@ export const tmdbService = {
       with_original_language: "en|hi",
       page: page.toString(),
     }),
-  getUpcoming: (type: "movie" | "tv" = "movie", page: number = 1) =>
-    fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
-      sort_by: "popularity.desc",
-      [type === "movie" ? "primary_release_date.gte" : "first_air_date.gte"]:
-        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      with_original_language: "en|hi",
-      page: page.toString(),
-    }),
   getTopRated: (type: "movie" | "tv" = "movie", page: number = 1) =>
     fetchTMDB<{ results: any[]; total_pages: number }>(`/discover/${type}`, {
       sort_by: "vote_average.desc",
