@@ -417,9 +417,9 @@ const MovieDetail: React.FC = () => {
                       Server:
                     </span>
                     {[
-                      { name: "S1 (Auto)", id: 0 },
+                      { name: "S1 (2Embed)", id: 0 },
                       { name: "S2 (VidSrc)", id: 1 },
-                      { name: "S3 (2Embed)", id: 2 },
+                      { name: "S3 (Auto)", id: 2 },
                     ].map((s) => (
                       <button
                         key={s.id}
@@ -491,15 +491,15 @@ const MovieDetail: React.FC = () => {
                   src={
                     server === 0
                       ? isTv
-                        ? `https://embed.su/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
-                        : `https://embed.su/embed/movie/${movie.id}`
+                        ? `https://www.2embed.cc/embedtv/${movie.id}&s=${selectedSeason}&e=${selectedEpisode}`
+                        : `https://www.2embed.cc/embed/${movie.imdb_id || movie.id}`
                       : server === 1
                         ? isTv
                           ? `https://vidsrc.net/embed/tv?tmdb=${movie.id}&season=${selectedSeason}&episode=${selectedEpisode}`
                           : `https://vidsrc.net/embed/movie?tmdb=${movie.id}`
                         : isTv
-                          ? `https://www.2embed.cc/embedtv/${movie.id}&s=${selectedSeason}&e=${selectedEpisode}`
-                          : `https://www.2embed.cc/embed/${movie.imdb_id || movie.id}`
+                          ? `https://embed.su/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
+                          : `https://embed.su/embed/movie/${movie.id}`
                   }
                   title="Movie Player"
                   className="w-full h-full"
