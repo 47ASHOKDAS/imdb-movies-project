@@ -62,10 +62,10 @@ const Search: React.FC = () => {
         }
       } else {
         // Regular search
-        const res = await tmdbService.searchMovies(searchQuery);
+        const res = await tmdbService.searchMulti(searchQuery);
         setResults(res.results);
         if (res.results.length === 0) {
-          setError("No movies found for your search.");
+          setError("No titles found for your search.");
         }
       }
     } catch (err) {
@@ -83,7 +83,7 @@ const Search: React.FC = () => {
         return;
       }
       try {
-        const res = await tmdbService.searchMovies(query);
+        const res = await tmdbService.searchMulti(query);
         setSuggestions(res.results.slice(0, 8));
         setShowSuggestions(true);
       } catch (e) {
@@ -98,7 +98,7 @@ const Search: React.FC = () => {
   }, [query, urlQuery]);
 
   const onSelectSuggestion = (movie: Movie) => {
-    navigate(`/movie/${movie.id}`);
+    navigate(`/${movie.media_type === 'tv' ? 'tv' : 'movie'}/${movie.id}`);
     setShowSuggestions(false);
   };
 

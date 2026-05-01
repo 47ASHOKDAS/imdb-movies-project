@@ -33,7 +33,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, className }) => {
       viewport={{ once: true }}
       className={cn("relative group flex flex-col gap-3", className)}
     >
-      <Link to={`/movie/${movie.id}`} className="relative outline-none">
+      <Link to={`/${movie.media_type === 'tv' || (!movie.media_type && movie.first_air_date) ? 'tv' : 'movie'}/${movie.id}`} className="relative outline-none">
         <div className="aspect-[2/3] rounded-xl overflow-hidden relative border border-white/5 bg-zinc-900 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-brand/20 group-hover:border-white/10">
           <img
             src={tmdbService.getImageUrl(movie.poster_path)}

@@ -33,7 +33,7 @@ const SearchInput: React.FC = () => {
 
       setLoading(true);
       try {
-        const res = await tmdbService.searchMovies(query);
+        const res = await tmdbService.searchMulti(query);
         setSuggestions(res.results.slice(0, 6));
         setIsOpen(true);
       } catch (error) {
@@ -47,8 +47,8 @@ const SearchInput: React.FC = () => {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const handleSelect = (movieId: number) => {
-    navigate(`/movie/${movieId}`);
+  const handleSelect = (movie: Movie) => {
+    navigate(`/${movie.media_type === 'tv' ? 'tv' : 'movie'}/${movie.id}`);
     setQuery('');
     setIsOpen(false);
   };
@@ -120,7 +120,7 @@ const SearchInput: React.FC = () => {
                 suggestions.map((movie) => (
                   <button
                     key={movie.id}
-                    onClick={() => handleSelect(movie.id)}
+                    onClick={() => handleSelect(movie)}
                     className="w-full flex items-center gap-4 p-3 hover:bg-white/5 rounded-2xl transition-all group text-left"
                   >
                     <div className="w-12 h-16 rounded-xl overflow-hidden shrink-0 border border-white/10 glass-card">

@@ -65,15 +65,24 @@ export const tmdbService = {
     fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
   getPersonDetails: (id: string | number) =>
     fetchTMDB<any>(`/person/${id}`, { append_to_response: "movie_credits" }),
-  searchMovies: async (query: string) => {
-    const data = await fetchTMDB<{ results: any[] }>("/search/movie", {
+  searchMulti: async (query: string) => {
+    const data = await fetchTMDB<{ results: any[] }>("/search/multi", {
       query,
     });
     return {
       ...data,
       results: data.results.filter(
-        (m) => m.original_language === "en" || m.original_language === "hi",
-      ),
+        (m) => (m.media_type === "movie" || m.media_type === "tv") && (m.original_language === "en" || m.original_language === "hi")
+      ).map(m => {
+        if (m.media_type === "tv") {
+          return {
+            ...m,
+            title: m.name,
+            release_date: m.first_air_date
+          }
+        }
+        return m;
+      }),
     };
   },
   getMovieDetails: (id: string | number) =>

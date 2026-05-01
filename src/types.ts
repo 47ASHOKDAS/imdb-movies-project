@@ -14,6 +14,7 @@ export interface Movie {
   genres?: { id: number; name: string }[];
   runtime?: number;
   imdb_id?: string;
+  media_type?: 'movie' | 'tv' | string;
 }
 
 export interface CastMember {

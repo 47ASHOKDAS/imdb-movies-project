@@ -30,11 +30,10 @@ const MovieDetail: React.FC = () => {
   const [omdbData, setOmdbData] = useState<OMDBData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTrailer, setShowTrailer] = useState(false);
-  const [showMovie, setShowMovie] = useState(false);
-  const [server, setServer] = useState(0);
-  const [selectedSeason, setSelectedSeason] = useState(1);
-  const [selectedEpisode, setSelectedEpisode] = useState(1);
+  const [selectedSeason, setSelectedSeason] = useState<number | "">(1);
+  const [selectedEpisode, setSelectedEpisode] = useState<number | "">(1);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
+  const [showServerModal, setShowServerModal] = useState(false);
 
   useEffect(() => {
     const loadMovie = async () => {
@@ -106,13 +105,30 @@ const MovieDetail: React.FC = () => {
   const watchLink = watchData?.link;
 
   const handleWatchNow = () => {
-    if (movie.imdb_id) {
-      setShowMovie(true);
+    if (movie.id) {
+      setShowServerModal(true);
     } else if (watchLink) {
       window.open(watchLink, "_blank");
     } else {
-      alert("No IMDb ID found for this movie. Unable to play.");
+      alert("No ID found for this movie. Unable to play.");
     }
+  };
+
+  const handlePlayOnServer = (serverIndex: number) => {
+    let url = "";
+    if (serverIndex === 0) {
+      url = isTv
+        ? `https://vidlink.pro/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidlink.pro/movie/${movie.id}`;
+    } else {
+      url = isTv
+        ? `https://vidsrc.net/embed/tv?tmdb=${movie.id}&season=${selectedSeason}&episode=${selectedEpisode}`
+        : movie?.imdb_id
+          ? `https://vidsrc.net/embed/movie?imdb=${movie.imdb_id}`
+          : `https://vidsrc.net/embed/movie?tmdb=${movie?.id}`;
+    }
+    window.open(url, "_blank");
+    setShowServerModal(false);
   };
 
   return (
@@ -225,37 +241,39 @@ const MovieDetail: React.FC = () => {
               "{movie.tagline}"
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 mb-16">
-              <button
-                onClick={handleWatchNow}
-                className="btn-neon min-w-[200px] flex items-center justify-center gap-3"
-              >
-                <Play className="w-5 h-5 fill-current" />
-                WATCH NOW
-              </button>
-              <button
-                onClick={() =>
-                  inWatchlist
-                    ? removeFromWatchlist(movie.id)
-                    : addToWatchlist(movie)
-                }
-                className={cn(
-                  "btn-glass min-w-[200px] flex items-center justify-center gap-3",
-                  inWatchlist
-                    ? "text-brand border-brand/40 bg-brand/5 scale-105"
-                    : "",
-                )}
-              >
-                {inWatchlist ? (
-                  <Check className="w-5 h-5" />
-                ) : (
-                  <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />
-                )}
-                {inWatchlist ? "IN WATCHLIST" : "WATCHLIST"}
-              </button>
-              <button className="btn-glass p-4 rounded-xl">
-                <Share2 className="w-5 h-5" />
-              </button>
+            <div className="flex flex-col gap-6 mb-16">
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  onClick={handleWatchNow}
+                  className="btn-neon min-w-[200px] flex items-center justify-center gap-3"
+                >
+                  <Play className="w-5 h-5 fill-current" />
+                  WATCH NOW
+                </button>
+                <button
+                  onClick={() =>
+                    inWatchlist
+                      ? removeFromWatchlist(movie.id)
+                      : addToWatchlist(movie)
+                  }
+                  className={cn(
+                    "btn-glass min-w-[200px] flex items-center justify-center gap-3",
+                    inWatchlist
+                      ? "text-brand border-brand/40 bg-brand/5 scale-105"
+                      : "",
+                  )}
+                >
+                  {inWatchlist ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />
+                  )}
+                  {inWatchlist ? "IN WATCHLIST" : "WATCHLIST"}
+                </button>
+                <button className="btn-glass p-4 rounded-xl">
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -392,8 +410,11 @@ const MovieDetail: React.FC = () => {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
 
-        {showMovie && movie.imdb_id && (
+      {/* Server Selection Modal */}
+      <AnimatePresence>
+        {showServerModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -402,44 +423,41 @@ const MovieDetail: React.FC = () => {
           >
             <div
               className="absolute inset-0 bg-obsidian/95 backdrop-blur-3xl"
-              onClick={() => setShowMovie(false)}
+              onClick={() => setShowServerModal(false)}
             />
             <motion.div
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 50 }}
-              className="relative z-10 w-full max-w-6xl flex flex-col gap-4"
+              className="relative z-10 w-full max-w-lg glass-card rounded-[2rem] p-8 border border-white/10"
             >
-              <div className="flex items-center justify-between bg-black/60 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex-wrap gap-4">
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-400 text-sm font-bold uppercase tracking-widest">
-                      Server:
-                    </span>
-                    {[
-                      { name: "S1 (2Embed)", id: 0 },
-                      { name: "S2 (VidSrc)", id: 1 },
-                      { name: "S3 (Auto)", id: 2 },
-                    ].map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => setServer(s.id)}
-                        className={cn(
-                          "px-3 py-1.5 rounded-xl text-sm font-bold transition-colors",
-                          server === s.id
-                            ? "bg-brand text-white"
-                            : "bg-white/5 hover:bg-white/10 text-zinc-300",
-                        )}
-                      >
-                        {s.name}
-                      </button>
-                    ))}
-                  </div>
+              <button
+                onClick={() => setShowServerModal(false)}
+                className="absolute top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors shadow-lg shadow-black/20"
+              >
+                <Plus className="w-6 h-6 rotate-45" />
+              </button>
 
-                  {isTv && movie.number_of_seasons && (
-                    <div className="flex items-center gap-2 ml-4">
+              <div className="mb-8 pr-12">
+                <h3 className="text-2xl font-display font-black uppercase mb-2">
+                  Select <span className="text-brand">Source</span>
+                </h3>
+                <p className="text-sm font-medium text-zinc-400">
+                  Choose a server to watch
+                  {isTv ? " and select your season/episode" : ""}.
+                </p>
+              </div>
+
+              {isTv &&
+                movie.number_of_seasons &&
+                typeof selectedSeason === "number" && (
+                  <div className="flex gap-4 mb-8">
+                    <div className="flex-1 space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                        Season
+                      </label>
                       <select
-                        className="bg-white/10 border border-white/20 text-white text-sm rounded-lg outline-none cursor-pointer px-3 py-1.5 font-bold"
+                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 overflow-hidden appearance-none"
                         value={selectedSeason}
                         onChange={(e) => {
                           setSelectedSeason(Number(e.target.value));
@@ -458,8 +476,13 @@ const MovieDetail: React.FC = () => {
                           ),
                         )}
                       </select>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                        Episode
+                      </label>
                       <select
-                        className="bg-white/10 border border-white/20 text-white text-sm rounded-lg outline-none cursor-pointer px-3 py-1.5 font-bold"
+                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-white/10 appearance-none"
                         value={selectedEpisode}
                         onChange={(e) =>
                           setSelectedEpisode(Number(e.target.value))
@@ -476,36 +499,47 @@ const MovieDetail: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+              <div className="space-y-4">
+                <button
+                  onClick={() => handlePlayOnServer(0)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left"
+                >
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg group-hover:text-brand transition-colors">
+                        Server 1
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        Multi-Audio • Fast
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center">
+                      <Play className="w-5 h-5 text-brand fill-current ml-1" />
+                    </div>
+                  </div>
+                </button>
 
                 <button
-                  onClick={() => setShowMovie(false)}
-                  className="w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors pointer-events-auto shrink-0"
+                  onClick={() => handlePlayOnServer(1)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all text-left"
                 >
-                  <Plus className="w-6 h-6 rotate-45" />
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg transition-colors group-hover:text-white">
+                        Server 2
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        High Quality
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white transition-colors">
+                      <Play className="w-5 h-5 fill-current ml-1 text-white opacity-50 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
                 </button>
-              </div>
-              <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 bg-black relative">
-                <iframe
-                  src={
-                    server === 0
-                      ? isTv
-                        ? `https://www.2embed.cc/embedtv/${movie.id}&s=${selectedSeason}&e=${selectedEpisode}`
-                        : `https://www.2embed.cc/embed/${movie.imdb_id || movie.id}`
-                      : server === 1
-                        ? isTv
-                          ? `https://vidsrc.net/embed/tv?tmdb=${movie.id}&season=${selectedSeason}&episode=${selectedEpisode}`
-                          : `https://vidsrc.net/embed/movie?tmdb=${movie.id}`
-                        : isTv
-                          ? `https://embed.su/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
-                          : `https://embed.su/embed/movie/${movie.id}`
-                  }
-                  title="Movie Player"
-                  className="w-full h-full"
-                  allowFullScreen
-                  allow="autoplay; fullscreen"
-                />
               </div>
             </motion.div>
           </motion.div>
