@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Play, Plus, Check, Star, Calendar, Clock, Trophy, ExternalLink, AlertCircle, Share2 } from 'lucide-react';
-import { MovieDetails, OMDBData } from '../types';
+import { MovieDetails, OMDBData, Movie } from '../types';
 import { tmdbService } from '../services/tmdb';
 import { omdbService } from '../services/omdb';
 import { useWatchlist } from '../context/WatchlistContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import MovieCard from '../components/movies/MovieCard';
+import SEO from '../components/common/SEO';
 
 const MovieDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [movie, setMovie] = useState<MovieDetails | null>(null);
+  const [similarMovies, setSimilarMovies] = useState<Movie[]>([]);
   const [omdbData, setOmdbData] = useState<OMDBData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -23,6 +26,9 @@ const MovieDetail: React.FC = () => {
       try {
         const data = await tmdbService.getMovieDetails(id);
         setMovie(data);
+        
+        const similar = await tmdbService.getSimilarMovies(id);
+        setSimilarMovies(similar.results.slice(0, 10));
         
         if (data.imdb_id) {
           const omdb = await omdbService.getMovieByImdbId(data.imdb_id);
@@ -72,6 +78,12 @@ const MovieDetail: React.FC = () => {
 
   return (
     <div className="pb-20 bg-obsidian text-white overflow-x-hidden">
+      <SEO 
+        title={movie.title}
+        description={movie.overview}
+        image={tmdbService.getImageUrl(movie.poster_path, 'w500')}
+        type="video.movie"
+      />
       {/* Cinematic Header Background */}
       <div className="relative h-[70vh] w-full overflow-hidden">
         <motion.img
@@ -221,28 +233,46 @@ const MovieDetail: React.FC = () => {
         {/* Cast Section */}
         <section className="mt-32">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl font-display font-black tracking-tight">STARRING <span className="text-brand">ACTORS</span></h2>
+            <h2 className="text-3xl font-display font-black tracking-tight uppercase">STARRING <span className="text-brand">ACTORS</span></h2>
             <div className="h-[1px] flex-grow mx-8 bg-white/5" />
           </div>
           <div className="flex gap-8 overflow-x-auto pb-8 horizontal-scroll">
             {movie.credits.cast.slice(0, 10).map((actor, idx) => (
-              <div 
+              <Link 
+                to={`/person/${actor.id}`}
                 key={actor.id} 
-                className="flex-shrink-0 w-40 text-center"
+                className="flex-shrink-0 w-40 text-center group"
               >
-                <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border-2 border-white/5 shadow-2xl group cursor-pointer ring-offset-4 ring-offset-obsidian hover:ring-2 ring-brand transition-all duration-500">
+                <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border-2 border-white/5 shadow-2xl group cursor-pointer ring-offset-4 ring-offset-obsidian group-hover:ring-2 ring-brand transition-all duration-500">
                   <img 
-                    src={actor.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : 'https://via.placeholder.com/185x185?text=No+Image'} 
+                    src={actor.profile_path ? tmdbService.getImageUrl(actor.profile_path, 'w185') : 'https://via.placeholder.com/185x185?text=No+Image'} 
                     alt={actor.name} 
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110"
                   />
                 </div>
-                <h4 className="font-bold text-sm truncate">{actor.name}</h4>
+                <h4 className="font-bold text-sm truncate group-hover:text-brand transition-colors">{actor.name}</h4>
                 <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1 truncate">{actor.character}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
+
+        {/* Recommended Movies */}
+        {similarMovies.length > 0 && (
+          <section className="mt-32">
+            <div className="flex items-center justify-between mb-12">
+              <h2 className="text-3xl font-display font-black tracking-tight uppercase">MORE LIKE <span className="text-brand">THIS</span></h2>
+              <div className="h-[1px] flex-grow mx-8 bg-white/5" />
+            </div>
+            <div className="flex gap-6 overflow-x-auto pb-8 horizontal-scroll">
+              {similarMovies.map((m) => (
+                <div key={m.id} className="flex-shrink-0 w-48 md:w-56">
+                  <MovieCard movie={m} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Trailer Modal */}

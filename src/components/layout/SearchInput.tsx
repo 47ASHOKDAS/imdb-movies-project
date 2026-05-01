@@ -69,8 +69,8 @@ const SearchInput: React.FC = () => {
           "relative flex items-center transition-all duration-500",
           isOpen ? "scale-[1.01]" : ""
         )}>
-          <div className="absolute left-5 text-zinc-500 group-focus-within:text-brand transition-colors duration-300">
-            <Search className="w-4 h-4" />
+          <div className="absolute left-4 text-zinc-500 group-focus-within:text-brand transition-colors duration-300">
+            <Search className="w-3.5 h-3.5" />
           </div>
           
           <input
@@ -81,20 +81,20 @@ const SearchInput: React.FC = () => {
               setIsOpen(true);
             }}
             onFocus={() => query.length >= 2 && setIsOpen(true)}
-            placeholder="Search movies, actors, or IMDb links..."
-            className="w-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-brand/40 focus:bg-white/10 rounded-2xl py-3 pl-14 pr-12 text-sm font-medium text-white placeholder:text-zinc-500 transition-all duration-300 backdrop-blur-xl focus:ring-4 focus:ring-brand/10 outline-none shadow-2xl"
+            placeholder="Search movies..."
+            className="w-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-brand/40 focus:bg-white/10 rounded-xl py-2 pl-12 pr-10 text-xs font-semibold text-white placeholder:text-zinc-500 transition-all duration-300 backdrop-blur-xl outline-none shadow-xl"
           />
 
-          <div className="absolute right-4 flex items-center gap-2">
+          <div className="absolute right-3 flex items-center gap-2">
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-brand" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
             ) : query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
                 className="p-1 hover:bg-white/10 rounded-full text-zinc-500 hover:text-white transition-all"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>

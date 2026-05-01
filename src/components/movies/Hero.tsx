@@ -31,54 +31,52 @@ const Hero: React.FC<HeroProps> = ({ movie }) => {
   };
 
   return (
-    <div className="relative h-[95vh] w-full overflow-hidden bg-obsidian">
-      {/* Cinematic Parallax Background */}
+    <div className="relative h-screen w-full overflow-hidden bg-obsidian">
+      {/* Cinematic Background with Multi-Layer Gradients */}
       <motion.div 
-        style={{ y: scrollY * 0.4 }}
+        style={{ y: scrollY * 0.3 }}
         className="absolute inset-0 z-0"
       >
         <img
           src={tmdbService.getImageUrl(movie.backdrop_path, 'original')}
           alt={movie.title}
-          className="w-full h-full object-cover brightness-[0.4] scale-110"
+          className="w-full h-full object-cover brightness-[0.5]"
         />
-        <div className="absolute inset-0 hero-mask" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-obsidian/20 to-obsidian" />
+        {/* Left Edge Fade for content readability */}
+        <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-obsidian via-obsidian/60 to-transparent" />
+        {/* Bottom Edge Fade */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-obsidian via-obsidian/40 to-transparent" />
       </motion.div>
 
-      {/* Content */}
-      <div className="relative z-10 h-full flex flex-col justify-center px-8 md:px-20 max-w-7xl mx-auto pt-20">
+      {/* Content Section - Aligned Left for Netflix Look */}
+      <div className="relative z-10 h-full flex flex-col justify-center px-8 md:px-24">
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
+          initial={{ opacity: 0, x: -60 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-2xl"
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-2xl pt-20"
         >
-          {/* Futuristic Badge */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex items-center gap-4 mb-6"
+            transition={{ delay: 0.3 }}
+            className="flex items-center gap-5 mb-8"
           >
-            <div className="bg-brand/20 backdrop-blur-xl border border-brand/40 px-3 py-1 rounded-full flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
-              </span>
-              <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Now Streaming</span>
+            <div className="flex items-center gap-2 bg-brand/10 border border-brand/30 px-4 py-1.5 rounded-full backdrop-blur-md">
+              <span className="w-2 h-2 bg-brand rounded-full animate-pulse shadow-[0_0_10px_#8b5cf6]" />
+              <span className="text-[10px] font-black tracking-[0.3em] text-white uppercase">TOP TRENDING</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Star className="w-4 h-4 text-gold fill-current" />
-              <span className="text-sm font-black tracking-tighter text-white">{movie.vote_average.toFixed(1)}</span>
+              <span className="text-sm font-black text-white">{movie.vote_average.toFixed(1)} Rating</span>
             </div>
           </motion.div>
 
           <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-6xl md:text-8xl font-display font-black tracking-tighter text-white mb-6 leading-[0.9] uppercase"
+            transition={{ delay: 0.4 }}
+            className="text-6xl md:text-9xl font-display font-black tracking-tighter text-white mb-8 leading-[0.85] uppercase drop-shadow-2xl"
           >
             {movie.title}
           </motion.h1>
@@ -86,8 +84,8 @@ const Hero: React.FC<HeroProps> = ({ movie }) => {
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-lg text-zinc-300 mb-10 line-clamp-3 leading-relaxed max-w-xl font-medium"
+            transition={{ delay: 0.5 }}
+            className="text-lg md:text-xl text-zinc-300 mb-12 line-clamp-3 leading-relaxed max-w-xl font-medium drop-shadow-lg"
           >
             {movie.overview}
           </motion.p>
@@ -95,36 +93,36 @@ const Hero: React.FC<HeroProps> = ({ movie }) => {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="flex flex-wrap items-center gap-4"
+            transition={{ delay: 0.6 }}
+            className="flex flex-wrap items-center gap-6"
           >
-            <Link to={`/movie/${movie.id}`} className="btn-neon flex items-center gap-3">
-              <Play className="w-5 h-5 fill-current" />
-              WATCH NOW
+            <Link 
+              to={`/movie/${movie.id}`} 
+              className="relative group overflow-hidden bg-brand text-white px-10 py-5 rounded-2xl font-black tracking-widest text-sm flex items-center gap-4 transition-all hover:scale-105 active:scale-95 shadow-[0_20px_40px_rgba(139,92,246,0.3)] hover:shadow-[0_20px_60px_rgba(139,92,246,0.5)]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-brand via-[#a855f7] to-brand bg-[length:200%_100%] animate-gradient-x" />
+              <Play className="w-5 h-5 fill-current relative z-10" />
+              <span className="relative z-10">WATCH NOW</span>
             </Link>
+            
             <button 
               onClick={handleWatchlist}
               className={cn(
-                "btn-glass flex items-center gap-3 group",
-                inWatchlist ? "text-brand border-brand/50 bg-brand/5 scale-105" : ""
+                "px-10 py-5 rounded-2xl font-black tracking-widest text-sm border-2 flex items-center gap-4 transition-all hover:bg-white/10",
+                inWatchlist 
+                  ? "bg-white/10 border-brand text-brand" 
+                  : "bg-white/5 border-white/10 text-white"
               )}
             >
-              {inWatchlist ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />}
+              {inWatchlist ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
               {inWatchlist ? 'IN WATCHLIST' : 'WATCHLIST'}
             </button>
           </motion.div>
         </motion.div>
       </div>
 
-      {/* Modern Scroll Indicator */}
-      <motion.div 
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 2 }}
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
-      >
-        <span className="text-[10px] font-black tracking-[0.3em] text-zinc-500 uppercase">Scroll</span>
-        <div className="w-[1px] h-12 bg-gradient-to-b from-brand to-transparent rounded-full" />
-      </motion.div>
+      {/* Cinematic Gradient at the bottom to blend with the background */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-obsidian to-transparent z-10" />
     </div>
   );
 };

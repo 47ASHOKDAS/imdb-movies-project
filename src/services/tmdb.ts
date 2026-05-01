@@ -23,6 +23,8 @@ export const tmdbService = {
   getTrending: () => fetchTMDB<{ results: any[] }>('/trending/movie/day'),
   getPopular: () => fetchTMDB<{ results: any[] }>('/movie/popular'),
   getTopRated: () => fetchTMDB<{ results: any[] }>('/movie/top_rated'),
+  getSimilarMovies: (id: string | number) => fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
+  getPersonDetails: (id: string | number) => fetchTMDB<any>(`/person/${id}`, { append_to_response: 'movie_credits' }),
   searchMovies: (query: string) => fetchTMDB<{ results: any[] }>('/search/movie', { query }),
   getMovieDetails: (id: string | number) => 
     fetchTMDB<any>(`/movie/${id}`, { append_to_response: 'credits,videos,watch/providers' }),
