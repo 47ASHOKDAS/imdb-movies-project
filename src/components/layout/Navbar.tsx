@@ -70,6 +70,14 @@ const Navbar: React.FC = () => {
         </div>
 
         <button
+          onClick={toggleTheme}
+          className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center transition-all hover:bg-white/10"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun className="w-5 h-5 text-white" /> : <Moon className="w-5 h-5 text-white" />}
+        </button>
+
+        <button
           onClick={() => window.dispatchEvent(new CustomEvent("toggleSidebar"))}
           className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center transition-all hover:bg-white/10"
           aria-label="Toggle menu"

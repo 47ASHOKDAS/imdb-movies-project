@@ -22,7 +22,7 @@ export default function App() {
       <ThemeProvider>
         <WatchlistProvider>
           <BrowserRouter>
-            <div className="min-h-screen flex flex-col font-sans relative overflow-hidden bg-obsidian">
+            <div className="min-h-screen flex flex-col font-sans relative overflow-hidden text-current bg-transparent">
               {/* Grid Background */}
               <div className="fixed inset-0 z-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wMikiPjxwYXRoIGQ9Ik0wIC41SDMxLjVWMzIiLz48L3N2Zz4=')] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] pointer-events-none"></div>
               
