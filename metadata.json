@@ -1,0 +1,6 @@
+{
+  "name": "IMDBflix",
+  "description": "A professional OTT-style movie discovery platform with IMDb link support, trailers, and watchlist features.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
