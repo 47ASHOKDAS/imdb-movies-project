@@ -23,7 +23,16 @@ export const tmdbService = {
   getTrending: () => fetchTMDB<{ results: any[] }>('/trending/movie/day'),
   getPopular: () => fetchTMDB<{ results: any[] }>('/movie/popular'),
   getTopRated: () => fetchTMDB<{ results: any[] }>('/movie/top_rated'),
-  getMoviesByGenre: (genreId: number | string) => fetchTMDB<{ results: any[] }>('/discover/movie', { with_genres: genreId.toString() }),
+  getMoviesByGenre: (genreId: number | string, page: number = 1) => 
+    fetchTMDB<{ results: any[], total_pages: number }>(
+      '/discover/movie', 
+      { 
+        with_genres: genreId.toString(), 
+        page: page.toString(),
+        sort_by: 'primary_release_date.desc',
+        'primary_release_date.lte': new Date().toISOString().split('T')[0] // Only show released or upcoming up to today
+      }
+    ),
   getSimilarMovies: (id: string | number) => fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
   getPersonDetails: (id: string | number) => fetchTMDB<any>(`/person/${id}`, { append_to_response: 'movie_credits' }),
   searchMovies: (query: string) => fetchTMDB<{ results: any[] }>('/search/movie', { query }),
