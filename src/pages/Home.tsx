@@ -4,9 +4,9 @@ import { Movie } from "../types";
 import MovieCard from "../components/movies/MovieCard";
 import { MovieGridSkeleton } from "../components/ui/Skeleton";
 import SEO from "../components/common/SEO";
-import Sidebar, { GENRES } from "../components/layout/Sidebar";
+import { GENRES } from "../components/layout/Sidebar";
 import { TrendingUp, Star, Zap, ChevronRight, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "../lib/utils";
 
 interface HomeProps {
@@ -14,11 +14,17 @@ interface HomeProps {
 }
 
 const Home = ({ type = "movie" }: HomeProps) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedGenre = searchParams.get("genre") || "all";
+
+  const setSelectedGenre = (genreStr: string) => {
+    setSearchParams(genreStr === "all" ? {} : { genre: genreStr });
+  };
+
   const [trending, setTrending] = useState<Movie[]>([]);
   const [bollywood, setBollywood] = useState<Movie[]>([]);
   const [hollywood, setHollywood] = useState<Movie[]>([]);
   const [genreMovies, setGenreMovies] = useState<Movie[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState("all");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -189,8 +195,6 @@ const Home = ({ type = "movie" }: HomeProps) => {
         }
         description="Stream top-rated movies and find your next favorite film on IMDBflix."
       />
-
-      <Sidebar selectedGenre={selectedGenre} onSelectGenre={setSelectedGenre} />
 
       <main className="flex-grow w-full">
         {selectedGenre === "all" ? (

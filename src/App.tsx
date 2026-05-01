@@ -4,6 +4,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { WatchlistProvider } from "./context/WatchlistContext";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
+import Sidebar from "./components/layout/Sidebar";
 import Home from "./pages/Home";
 import Search from "./pages/Search";
 import MovieDetail from "./pages/MovieDetail";
@@ -41,6 +42,7 @@ export default function App() {
 
               <div className="relative z-10 flex flex-col min-h-screen">
                 <Navbar />
+                <Sidebar />
                 <main className="flex-grow">
                   {!isConfigured ? (
                     <SetupGuide />
