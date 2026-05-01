@@ -36,18 +36,22 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, className }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className={cn("relative group flex flex-col gap-3", className)}
+      viewport={{ once: true, margin: "100px" }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className={cn(
+        "relative group flex flex-col gap-3 transform-gpu will-change-[transform,opacity]",
+        className,
+      )}
     >
       <Link
         to={`/${movie.media_type === "tv" || (!movie.media_type && movie.first_air_date) ? "tv" : "movie"}/${movie.id}`}
         className="relative outline-none block"
       >
-        <div className="aspect-[2/3] rounded-xl overflow-hidden relative border border-white/5 bg-zinc-900 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-brand/20 group-hover:border-white/10">
+        <div className="aspect-[2/3] rounded-xl overflow-hidden relative border border-white/5 bg-zinc-900 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-brand/20 group-hover:border-white/10 transform-gpu will-change-[transform,box-shadow]">
           <img
             src={tmdbService.getImageUrl(movie.poster_path)}
             alt={movie.title}
-            className="w-full h-full object-cover transition-all duration-300 group-hover:brightness-75"
+            className="w-full h-full object-cover transition-[transform,filter] duration-300 group-hover:brightness-75 transform-gpu will-change-[filter]"
             loading="lazy"
           />
 

@@ -127,8 +127,8 @@ const SearchInput: React.FC = () => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute top-full left-0 right-0 mt-4 glass-dropdown rounded-[2rem] overflow-hidden z-40 p-4"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute top-full left-0 right-0 mt-4 glass-dropdown rounded-[2rem] overflow-hidden z-40 p-4 transform-gpu will-change-[transform,opacity]"
           >
             <div className="flex items-center gap-2 px-4 mb-4">
               {query.trim().length >= 2 ? (

@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedGenre, onSelectGenre }) => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 bottom-0 w-80 bg-obsidian border-l border-white/5 z-50 flex flex-col shadow-2xl"
+            className="fixed right-0 top-0 bottom-0 w-80 bg-obsidian border-l border-white/5 z-50 flex flex-col shadow-2xl transform-gpu will-change-transform"
           >
             <div className="flex items-center justify-between p-6 border-b border-white/5">
               <h2 className="text-xl font-bold">Categories</h2>

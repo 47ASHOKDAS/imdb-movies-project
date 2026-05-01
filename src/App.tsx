@@ -25,12 +25,18 @@ export default function App() {
             <div className="min-h-screen flex flex-col font-sans relative overflow-hidden text-current bg-transparent">
               {/* Grid Background */}
               <div className="fixed inset-0 z-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wMikiPjxwYXRoIGQ9Ik0wIC41SDMxLjVWMzIiLz48L3N2Zz4=')] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] pointer-events-none"></div>
-              
-              {/* Background gradient orbs */}
-              <div className="fixed inset-0 z-0 pointer-events-none opacity-20">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-brand blur-[120px] animate-pulse"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent blur-[120px] animate-pulse" style={{ animationDelay: "2s" }}></div>
-                <div className="absolute top-[40%] left-[50%] w-[30%] h-[30%] rounded-full bg-purple-900 blur-[150px] animate-pulse" style={{ animationDelay: "4s" }}></div>
+
+              {/* Background gradient orbs - Optimized with radial gradients instead of blur filters for buttery smooth performance */}
+              <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[radial-gradient(circle_at_center,var(--color-brand)_0%,transparent_60%)] opacity-20 transform-gpu animate-pulse"></div>
+                <div
+                  className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-[radial-gradient(circle_at_center,var(--color-accent)_0%,transparent_60%)] opacity-20 transform-gpu animate-pulse"
+                  style={{ animationDelay: "2s" }}
+                ></div>
+                <div
+                  className="absolute top-[30%] left-[30%] w-[50%] h-[50%] bg-[radial-gradient(circle_at_center,rgba(88,28,135,0.8)_0%,transparent_60%)] opacity-10 transform-gpu animate-pulse"
+                  style={{ animationDelay: "4s" }}
+                ></div>
               </div>
 
               <div className="relative z-10 flex flex-col min-h-screen">
