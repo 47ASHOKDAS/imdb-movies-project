@@ -20,9 +20,13 @@ async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {
 
 export const tmdbService = {
   isConfigured: !!TMDB_API_KEY,
-  getTrending: () => fetchTMDB<{ results: any[] }>('/trending/movie/day'),
-  getPopular: () => fetchTMDB<{ results: any[] }>('/movie/popular'),
-  getTopRated: () => fetchTMDB<{ results: any[] }>('/movie/top_rated'),
+  getTrending: () => fetchTMDB<{ results: any[] }>('/discover/movie', { 
+    sort_by: 'popularity.desc', 
+    'primary_release_date.gte': new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    with_original_language: 'en|hi'
+  }),
+  getPopular: () => fetchTMDB<{ results: any[] }>('/discover/movie', { sort_by: 'popularity.desc', with_original_language: 'en|hi' }),
+  getTopRated: () => fetchTMDB<{ results: any[] }>('/discover/movie', { sort_by: 'vote_average.desc', 'vote_count.gte': '1000', without_genres: '99,10755', with_original_language: 'en|hi' }),
   getMoviesByGenre: (genreId: number | string, page: number = 1) => 
     fetchTMDB<{ results: any[], total_pages: number }>(
       '/discover/movie', 
@@ -30,12 +34,19 @@ export const tmdbService = {
         with_genres: genreId.toString(), 
         page: page.toString(),
         sort_by: 'primary_release_date.desc',
-        'primary_release_date.lte': new Date().toISOString().split('T')[0] // Only show released or upcoming up to today
+        'primary_release_date.lte': new Date().toISOString().split('T')[0], // Only show released or upcoming up to today
+        with_original_language: 'en|hi'
       }
     ),
   getSimilarMovies: (id: string | number) => fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
   getPersonDetails: (id: string | number) => fetchTMDB<any>(`/person/${id}`, { append_to_response: 'movie_credits' }),
-  searchMovies: (query: string) => fetchTMDB<{ results: any[] }>('/search/movie', { query }),
+  searchMovies: async (query: string) => {
+    const data = await fetchTMDB<{ results: any[] }>('/search/movie', { query });
+    return {
+      ...data,
+      results: data.results.filter(m => m.original_language === 'en' || m.original_language === 'hi')
+    };
+  },
   getMovieDetails: (id: string | number) => 
     fetchTMDB<any>(`/movie/${id}`, { append_to_response: 'credits,videos,watch/providers' }),
   getMovieByImdbId: async (imdbId: string) => {
