@@ -4,7 +4,7 @@ import { Movie } from "../types";
 import MovieCard from "../components/movies/MovieCard";
 import { MovieGridSkeleton } from "../components/ui/Skeleton";
 import SEO from "../components/common/SEO";
-import { GENRES } from "../components/layout/Sidebar";
+import { GENRES, PROVIDERS } from "../components/layout/Sidebar";
 import { TrendingUp, Star, Zap, ChevronRight, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "../lib/utils";
@@ -17,16 +17,12 @@ const Home = ({ type = "movie" }: HomeProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedGenre = searchParams.get("genre") || "all";
   const selectedYear = searchParams.get("year") || "";
-
-  const setSelectedGenre = (genreStr: string) => {
-    setSearchParams(
-      genreStr === "all" ? {} : { genre: genreStr, year: selectedYear },
-    );
-  };
+  const selectedProvider = searchParams.get("provider") || "all";
 
   const setSelectedYear = (yearStr: string) => {
     const newParams: any = {};
     if (selectedGenre !== "all") newParams.genre = selectedGenre;
+    if (selectedProvider !== "all") newParams.provider = selectedProvider;
     if (yearStr) newParams.year = yearStr;
     setSearchParams(newParams);
   };
@@ -43,7 +39,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const isGridMode = selectedGenre !== "all" || !!selectedYear;
+  const isGridMode = selectedGenre !== "all" || !!selectedYear || selectedProvider !== "all";
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -81,6 +77,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
           1,
           type,
           selectedYear,
+          selectedProvider
         );
         if (isMounted) {
           setGenreMovies(res.results);
@@ -99,7 +96,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
     return () => {
       isMounted = false;
     };
-  }, [isGridMode, selectedGenre, type, selectedYear]);
+  }, [isGridMode, selectedGenre, type, selectedYear, selectedProvider]);
 
   const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore || !isGridMode) return;
@@ -112,6 +109,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
         nextPage,
         type,
         selectedYear,
+        selectedProvider
       );
       setGenreMovies((prev) => {
         const existingIds = new Set(prev.map((m) => m.id));
@@ -125,7 +123,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, selectedGenre, page]);
+  }, [loadingMore, hasMore, selectedGenre, page, isGridMode, type, selectedYear, selectedProvider]);
 
   // Target ref for intersection observer
   const loadMoreRef = React.useRef<HTMLDivElement>(null);
@@ -196,11 +194,13 @@ const Home = ({ type = "movie" }: HomeProps) => {
     <div className="bg-transparent min-h-screen text-current flex">
       <SEO
         title={
-          selectedGenre === "all"
-            ? "IMDBflix - Discover Movies"
-            : `${GENRES.find((g) => g.id === selectedGenre)?.name} Movies | IMDBflix`
+          selectedProvider !== "all"
+            ? `${PROVIDERS.find((p) => p.id === selectedProvider)?.name} ${type === "tv" ? "TV Shows" : "Movies"} | IMDBflix`
+            : selectedGenre !== "all"
+              ? `${GENRES.find((g) => g.id === selectedGenre)?.name} ${type === "tv" ? "TV Shows" : "Movies"} | IMDBflix`
+              : `IMDBflix - Discover ${type === "tv" ? "TV Shows" : "Movies"}`
         }
-        description="Stream top-rated movies and find your next favorite film on IMDBflix."
+        description={`Stream top-rated ${type === "tv" ? "shows" : "movies"} and find your next favorite film on IMDBflix.`}
       />
 
       <main className="flex-grow w-full">
@@ -209,10 +209,10 @@ const Home = ({ type = "movie" }: HomeProps) => {
             <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div>
                 <h1 className="text-4xl md:text-5xl font-display font-black tracking-tight">
-                  Discover <span className="text-brand">Movies</span>
+                  Discover <span className="text-brand">{type === "movie" ? "Movies" : "TV Shows"}</span>
                 </h1>
                 <p className="text-zinc-500 mt-2 text-lg">
-                  Explore the best movies across various categories.
+                  Explore the best {type === "movie" ? "movies" : "shows"} across various categories.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-w-[200px]">
@@ -266,16 +266,18 @@ const Home = ({ type = "movie" }: HomeProps) => {
                   Collection
                 </span>
                 <h1 className="text-5xl md:text-7xl font-display font-black uppercase mb-4 tracking-tighter">
-                  {GENRES.find((g) => g.id === selectedGenre)?.name}{" "}
-                  <span className="text-zinc-500">Movies</span>
+                  {selectedProvider !== "all" 
+                    ? PROVIDERS.find((p) => p.id === selectedProvider)?.name 
+                    : GENRES.find((g) => g.id === selectedGenre)?.name}{" "}
+                  <span className="text-zinc-500">{type === "movie" ? "Movies" : "TV Shows"}</span>
                 </h1>
                 <div className="h-1 w-24 bg-brand rounded-full mb-6" />
                 <p className="text-zinc-500 font-medium text-lg">
                   Browse through our vast library of{" "}
-                  {GENRES.find(
-                    (g) => g.id === selectedGenre,
-                  )?.name.toLowerCase()}{" "}
-                  films, sorted by highest rating.
+                  {selectedProvider !== "all"
+                    ? PROVIDERS.find((p) => p.id === selectedProvider)?.name
+                    : GENRES.find((g) => g.id === selectedGenre)?.name.toLowerCase()}{" "}
+                  {type === "movie" ? "films" : "shows"}, sorted by highest rating.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-w-[200px]">

@@ -64,6 +64,7 @@ export const tmdbService = {
     page: number = 1,
     type: "movie" | "tv" = "movie",
     year?: string,
+    providerId?: string,
   ) => {
     let actualGenreId = genreId.toString();
     const isAnime = actualGenreId === "anime";
@@ -80,6 +81,11 @@ export const tmdbService = {
 
     if (actualGenreId && actualGenreId !== "all") {
       params.with_genres = actualGenreId;
+    }
+
+    if (providerId && providerId !== "all") {
+      params.with_watch_providers = providerId;
+      params.watch_region = "IN";
     }
 
     if (year) {

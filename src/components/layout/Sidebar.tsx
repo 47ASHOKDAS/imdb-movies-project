@@ -40,12 +40,21 @@ const NAV_LINKS = [
   { name: "Watchlist", path: "/watchlist", icon: ListVideo },
 ];
 
+export const PROVIDERS = [
+  { id: "8", name: "Netflix", icon: PlaySquare },
+  { id: "119", name: "Prime Video", icon: PlaySquare },
+  { id: "337", name: "Disney+", icon: PlaySquare },
+  { id: "220", name: "JioCinema", icon: PlaySquare },
+  { id: "122", name: "Hotstar", icon: PlaySquare },
+];
+
 const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const selectedGenre = searchParams.get("genre") || "all";
+  const selectedProvider = searchParams.get("provider") || "all";
 
   useEffect(() => {
     const handleToggle = () => setIsOpen((prev) => !prev);
@@ -133,10 +142,11 @@ const Sidebar: React.FC = () => {
                     <button
                       key={genre.id}
                       onClick={() => {
+                        const path = (location.pathname === "/" || location.pathname === "/movies" || location.pathname === "/tv") ? location.pathname : "/";
                         if (genre.id === "all") {
-                          navigate("/");
+                          navigate(path);
                         } else {
-                          navigate(`/?genre=${genre.id}`);
+                          navigate(`${path}?genre=${genre.id}`);
                         }
                         setIsOpen(false);
                       }}
@@ -154,6 +164,44 @@ const Sidebar: React.FC = () => {
                         )}
                       />
                       <span>{genre.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Providers */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4 px-4">
+                  Platforms
+                </h3>
+                {PROVIDERS.map((provider) => {
+                  const Icon = provider.icon;
+                  const isHome =
+                    location.pathname === "/" ||
+                    location.pathname === "/movies";
+                  const isActive = isHome && selectedProvider === provider.id;
+                  return (
+                    <button
+                      key={provider.id}
+                      onClick={() => {
+                        const path = (location.pathname === "/" || location.pathname === "/movies" || location.pathname === "/tv") ? location.pathname : "/";
+                        navigate(`${path}?provider=${provider.id}`);
+                        setIsOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300",
+                        isActive
+                          ? "bg-brand/20 text-brand font-semibold shadow-[0_0_15px_rgba(139,92,246,0.15)]"
+                          : "text-zinc-400 hover:bg-white/5 hover:text-white",
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "w-5 h-5",
+                          isActive ? "text-brand" : "text-zinc-500",
+                        )}
+                      />
+                      <span>{provider.name}</span>
                     </button>
                   );
                 })}
