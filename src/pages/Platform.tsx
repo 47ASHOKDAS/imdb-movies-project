@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Info, Search, Bell, ChevronDown, User, ArrowLeft, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Info, Search, Bell, ChevronDown, User, ArrowLeft, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { tmdbService } from '../services/tmdb';
 import { PROVIDERS } from '../components/layout/Sidebar';
+import { motion } from "motion/react";
 
 const NAVBAR_COLORS: Record<string, { logo: string, color: string }> = {
   "8": { logo: "NETFLIX", color: "#E50914" },
@@ -11,6 +12,63 @@ const NAVBAR_COLORS: Record<string, { logo: string, color: string }> = {
   "220": { logo: "JIOCINEMA", color: "#E5007D" },
   "122": { logo: "HOTSTAR", color: "#113CCF" },
 };
+
+function MovieRow({ title, data, isLargeRow, navigate }: any) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [isMoved, setIsMoved] = useState(false);
+  
+  const handleClick = (direction: "left" | "right") => {
+    setIsMoved(true);
+    if (rowRef.current) {
+      const { scrollLeft, clientWidth } = rowRef.current;
+      const scrollTo = direction === "left" ? scrollLeft - clientWidth * 0.8 : scrollLeft + clientWidth * 0.8;
+      rowRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <div className="px-4 md:px-12 py-4 mb-4 relative group">
+      <h2 className="text-white text-lg md:text-xl font-bold mb-3 md:mb-4 transition-colors hover:text-gray-300 w-max cursor-pointer">
+        {title}
+      </h2>
+      
+      <div className="relative">
+        <button 
+          onClick={() => handleClick("left")}
+          className={`absolute top-0 bottom-0 left-0 z-40 m-auto h-full w-12 cursor-pointer bg-black/40 opacity-0 transition duration-300 group-hover:opacity-100 hover:bg-black/60 backdrop-blur-[2px] flex items-center justify-center -ml-4 md:-ml-12 ${!isMoved && 'hidden'}`}
+        >
+           <ChevronLeft className="w-8 h-8 text-white" />
+        </button>
+
+        <div 
+          ref={rowRef}
+          className="flex overflow-y-hidden overflow-x-scroll scrollbar-hide gap-2 md:gap-4 py-6 -my-6 pl-1"
+        >
+          {data.map((movie: any) => (
+            <img
+              key={movie.id}
+              src={tmdbService.getImageUrl(isLargeRow ? movie.poster_path : backdropOrPoster(movie), "w500")}
+              alt={movie.title || movie.name}
+              onClick={() => navigate(`/${movie.media_type || 'movie'}/${movie.id}`)}
+              className={`
+                object-cover rounded-md cursor-pointer transition-transform duration-300 ease-out hover:scale-110 hover:z-10 shadow-lg flex-shrink-0
+                ${isLargeRow ? 'w-[150px] md:w-[200px] h-[225px] md:h-[300px]' : 'w-[200px] md:w-[280px] h-[112px] md:h-[157px]'}
+              `}
+              loading="lazy"
+            />
+          ))}
+        </div>
+
+        <button 
+          onClick={() => handleClick("right")}
+          className="absolute top-0 bottom-0 right-0 z-40 m-auto h-full w-12 cursor-pointer bg-black/40 opacity-0 transition duration-300 group-hover:opacity-100 hover:bg-black/60 backdrop-blur-[2px] flex items-center justify-center -mr-4 md:-mr-12"
+        >
+           <ChevronRight className="w-8 h-8 text-white" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Platform() {
   const { name: providerId } = useParams();
@@ -146,18 +204,31 @@ export default function Platform() {
       {/* Hero */}
       {heroMovie && (
         <div className="relative h-[85vh] text-white w-full object-contain">
-          <div className="absolute w-full h-full">
-            <img
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            className="absolute w-full h-full overflow-hidden"
+          >
+            <motion.img
+              initial={{ scale: 1 }}
+              animate={{ scale: 1.1 }}
+              transition={{ duration: 20, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
               src={tmdbService.getImageUrl(heroMovie.backdrop_path || heroMovie.poster_path, "original")}
               alt={heroMovie.title || heroMovie.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover origin-center"
             />
             {/* Overlay Gradients to blend into the background */}
-            <div className="absolute top-0 w-full h-full bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
-            <div className="absolute bottom-0 w-full h-32 bg-gradient-to-t from-[#141414] to-transparent" />
-          </div>
+            <div className="absolute top-0 w-full h-full bg-gradient-to-r from-black/80 via-black/30 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 w-full h-32 bg-gradient-to-t from-[#141414] to-transparent pointer-events-none" />
+          </motion.div>
 
-          <div className="relative pt-[25vh] md:pt-[35vh] px-4 md:px-12 w-full md:w-2/3 lg:w-1/2">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative pt-[25vh] md:pt-[35vh] px-4 md:px-12 w-full md:w-2/3 lg:w-1/2"
+          >
             <h1 className="text-5xl md:text-7xl font-bold mb-4 drop-shadow-2xl">
               {heroMovie.title || heroMovie.name}
             </h1>
@@ -169,7 +240,7 @@ export default function Platform() {
             <div className="flex gap-4">
               <button 
                  onClick={() => navigate(`/movie/${heroMovie.id}`)}
-                 className="flex items-center gap-2 bg-white text-black px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-white/80 transition"
+                 className="flex items-center gap-2 bg-white text-black px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-white/80 transition cursor-pointer"
               >
                 <Play className="w-5 h-5 md:w-6 md:h-6 fill-current" />
                 Play
@@ -182,36 +253,27 @@ export default function Platform() {
                 More Info
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
       
       {/* Rows */}
-      <div className="-mt-32 relative z-20">
+      <motion.div 
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
+        className="-mt-32 relative z-20"
+      >
         {rows.map((row, index) => (
-          <div key={index} className="px-4 md:px-12 py-4 mb-4">
-            <h2 className="text-white text-lg md:text-xl font-bold mb-3 md:mb-4">
-              {row.title}
-            </h2>
-            
-            <div className="flex overflow-y-hidden overflow-x-scroll scrollbar-hide gap-2 md:gap-4 py-4 -my-4 pl-1">
-              {row.data.map((movie) => (
-                <img
-                  key={movie.id}
-                  src={tmdbService.getImageUrl(row.isLargeRow ? movie.poster_path : backdropOrPoster(movie), "w500")}
-                  alt={movie.title || movie.name}
-                  onClick={() => navigate(`/${movie.media_type || 'movie'}/${movie.id}`)}
-                  className={`
-                    object-cover rounded-md cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105 hover:z-10
-                    ${row.isLargeRow ? 'w-[150px] md:w-[200px] h-[225px] md:h-[300px]' : 'w-[200px] md:w-[280px] h-[112px] md:h-[157px]'}
-                  `}
-                  loading="lazy"
-                />
-              ))}
-            </div>
-          </div>
+          <MovieRow 
+            key={index}
+            title={row.title}
+            data={row.data}
+            isLargeRow={row.isLargeRow}
+            navigate={navigate}
+          />
         ))}
-      </div>
+      </motion.div>
 
       {/* Footer */}
       <footer className="max-w-4xl mx-auto px-4 py-16 text-gray-400 text-sm">
