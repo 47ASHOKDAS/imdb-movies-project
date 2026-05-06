@@ -293,7 +293,7 @@ const MovieDetail: React.FC = () => {
             <h2 className="text-3xl font-display font-black tracking-tight uppercase">
               STARRING <span className="text-brand">ACTORS</span>
             </h2>
-            <div className="h-[1px] flex-grow mx-8 bg-white/5" />
+            <div className="h-[1px] flex-grow mx-8 bg-current/10" />
           </div>
           <div className="flex gap-8 overflow-x-auto pb-8 horizontal-scroll">
             {movie.credits.cast.slice(0, 10).map((actor, idx) => (
@@ -302,7 +302,7 @@ const MovieDetail: React.FC = () => {
                 key={actor.id}
                 className="flex-shrink-0 w-40 text-center group"
               >
-                <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border-2 border-white/5 shadow-2xl group cursor-pointer ring-offset-4 ring-offset-obsidian group-hover:ring-2 ring-brand transition-all duration-500">
+                <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border-2 border-current/10 shadow-2xl group cursor-pointer ring-offset-4 ring-offset-obsidian group-hover:ring-2 ring-brand transition-all duration-500">
                   <img
                     src={
                       actor.profile_path
@@ -331,7 +331,7 @@ const MovieDetail: React.FC = () => {
               <h2 className="text-3xl font-display font-black tracking-tight uppercase">
                 MORE LIKE <span className="text-brand">THIS</span>
               </h2>
-              <div className="h-[1px] flex-grow mx-8 bg-white/5" />
+              <div className="h-[1px] flex-grow mx-8 bg-current/10" />
             </div>
             <div className="flex gap-6 overflow-x-auto pb-8 horizontal-scroll">
               {similarMovies.map((m) => (
@@ -372,7 +372,7 @@ const MovieDetail: React.FC = () => {
               />
               <button
                 onClick={() => setShowTrailer(false)}
-                className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors text-white"
+                className="absolute top-6 right-6 w-12 h-12 bg-current/10 hover:bg-current/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors text-white"
               >
                 <Plus className="w-8 h-8 rotate-45" />
               </button>
@@ -402,7 +402,7 @@ const MovieDetail: React.FC = () => {
             >
               <button
                 onClick={() => setShowServerModal(false)}
-                className="absolute top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors shadow-lg shadow-black/20 text-current"
+                className="absolute top-6 right-6 w-10 h-10 bg-current/10 hover:bg-current/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors shadow-lg shadow-black/20 text-current"
               >
                 <Plus className="w-6 h-6 rotate-45" />
               </button>

@@ -78,13 +78,13 @@ const Sidebar: React.FC = () => {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 bottom-0 w-80 bg-obsidian border-l border-white/5 z-50 flex flex-col shadow-2xl transform-gpu will-change-transform"
+            className="fixed right-0 top-0 bottom-0 w-80 bg-obsidian border-l border-current/10 z-50 flex flex-col shadow-2xl transform-gpu will-change-transform"
           >
-            <div className="flex items-center justify-between p-6 border-b border-white/5">
+            <div className="flex items-center justify-between p-6 border-b border-current/10">
               <h2 className="text-xl font-bold">Menu</h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-400 hover:text-white"
+                className="p-2 hover:bg-current/10 rounded-full transition-colors text-zinc-400 hover:text-current"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -112,7 +112,7 @@ const Sidebar: React.FC = () => {
                         "w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300",
                         isActive
                           ? "bg-brand/20 text-brand font-semibold shadow-[0_0_15px_rgba(139,92,246,0.15)]"
-                          : "text-zinc-400 hover:bg-white/5 hover:text-white",
+                          : "text-zinc-500 hover:bg-current/10 hover:text-current",
                       )}
                     >
                       <Icon
@@ -154,7 +154,7 @@ const Sidebar: React.FC = () => {
                         "w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300",
                         isActive
                           ? "bg-brand/20 text-brand font-semibold shadow-[0_0_15px_rgba(139,92,246,0.15)]"
-                          : "text-zinc-400 hover:bg-white/5 hover:text-white",
+                          : "text-zinc-500 hover:bg-current/10 hover:text-current",
                       )}
                     >
                       <Icon
@@ -176,23 +176,20 @@ const Sidebar: React.FC = () => {
                 </h3>
                 {PROVIDERS.map((provider) => {
                   const Icon = provider.icon;
-                  const isHome =
-                    location.pathname === "/" ||
-                    location.pathname === "/movies";
-                  const isActive = isHome && selectedProvider === provider.id;
+                  const isPlatform = location.pathname.startsWith('/platform/');
+                  const isActive = isPlatform && location.pathname.includes(provider.id);
                   return (
                     <button
                       key={provider.id}
                       onClick={() => {
-                        const path = (location.pathname === "/" || location.pathname === "/movies" || location.pathname === "/tv") ? location.pathname : "/";
-                        navigate(`${path}?provider=${provider.id}`);
+                        navigate(`/platform/${provider.id}`);
                         setIsOpen(false);
                       }}
                       className={cn(
                         "w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300",
                         isActive
                           ? "bg-brand/20 text-brand font-semibold shadow-[0_0_15px_rgba(139,92,246,0.15)]"
-                          : "text-zinc-400 hover:bg-white/5 hover:text-white",
+                          : "text-zinc-500 hover:bg-current/10 hover:text-current",
                       )}
                     >
                       <Icon

@@ -3,7 +3,7 @@ import { Clapperboard, Github, Instagram, Twitter } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="py-12 px-6 border-t border-white/10 mt-20">
+    <footer className="py-12 px-6 border-t border-current/10 mt-20">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="flex flex-col items-center md:items-start gap-4">
           <div className="flex items-center gap-2">

@@ -173,7 +173,7 @@ const PersonDetail: React.FC = () => {
                 <h2 className="text-3xl font-display font-black tracking-tight uppercase">
                   MOST KNOWN <span className="text-brand">FOR</span>
                 </h2>
-                <div className="h-[1px] flex-grow mx-8 bg-white/5" />
+                <div className="h-[1px] flex-grow mx-8 bg-current/10" />
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">

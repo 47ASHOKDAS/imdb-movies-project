@@ -141,10 +141,10 @@ const Category = () => {
         <div className="flex items-center gap-6 mb-10">
           <Link
             to={type === "tv" ? "/tv" : "/movies"}
-            className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center transition-all hover:bg-white/10"
+            className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center transition-all hover:bg-current/10"
             aria-label="Go back"
           >
-            <ArrowLeft className="w-5 h-5 text-white" />
+            <ArrowLeft className="w-5 h-5 text-current" />
           </Link>
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-10 bg-brand rounded-full" />

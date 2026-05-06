@@ -10,7 +10,7 @@ const Watchlist: React.FC = () => {
 
   return (
     <div className="pt-32 px-6 max-w-7xl mx-auto min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-16 border-b border-white/10 pb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-16 border-b border-current/10 pb-8">
         <div>
           <div className="flex items-center gap-3 text-brand mb-2">
             <Heart className="w-6 h-6 fill-current" />

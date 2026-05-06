@@ -194,7 +194,7 @@ const SearchInput: React.FC = () => {
             </div>
 
             {query.trim() && (
-              <div className="mt-4 pt-4 border-t border-white/5 px-4">
+              <div className="mt-4 pt-4 border-t border-current/10 px-4">
                 <button
                   onClick={handleSearchSubmit}
                   className="w-full text-center text-[10px] font-black tracking-[0.2em] text-zinc-500 hover:text-brand transition-colors uppercase py-2"

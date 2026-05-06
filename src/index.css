@@ -32,7 +32,7 @@
   .light {
     --theme-brand: #7c3aed;
     --theme-accent: #0891b2;
-    --theme-obsidian: #0b0b0f;
+    --theme-obsidian: #ffffff;
     --theme-bg: #fafafa;
     --theme-text: #000000;
     background-color: var(--theme-bg);

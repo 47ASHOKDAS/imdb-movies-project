@@ -126,7 +126,7 @@ const Search: React.FC = () => {
               }
             }}
             placeholder="Search movie titles or paste IMDb link..."
-            className="w-full bg-black/40 border border-white/10 rounded-2xl py-5 px-16 text-lg focus:border-brand outline-none transition-all glass shadow-2xl"
+            className="w-full bg-current/5 border border-current/10 rounded-2xl py-5 px-16 text-lg focus:border-brand outline-none transition-all glass shadow-2xl"
           />
           <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-zinc-500" />
           
@@ -150,7 +150,7 @@ const Search: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute top-full left-0 right-0 mt-4 bg-[#121212] border border-white/10 rounded-3xl overflow-hidden shadow-2xl z-50 glass backdrop-blur-3xl"
+                className="absolute top-full left-0 right-0 mt-4 bg-[var(--theme-bg)] border border-current/10 rounded-3xl overflow-hidden shadow-2xl z-50 glass backdrop-blur-3xl"
               >
                 <div className="py-4">
                   <p className="px-6 pb-2 text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em]">Suggestions</p>
@@ -158,7 +158,7 @@ const Search: React.FC = () => {
                     <button
                       key={movie.id}
                       onClick={() => onSelectSuggestion(movie)}
-                      className="w-full flex items-center gap-4 px-6 py-4 hover:bg-white/5 transition-colors text-left group"
+                      className="w-full flex items-center gap-4 px-6 py-4 hover:bg-current/5 transition-colors text-left group"
                     >
                       <div className="w-12 h-16 rounded-xl overflow-hidden shrink-0 bg-zinc-800 shadow-lg shadow-black/50">
                         <img
@@ -188,7 +188,7 @@ const Search: React.FC = () => {
                       handleSearch(query);
                       setShowSuggestions(false);
                     }}
-                    className="w-full py-4 text-center text-xs uppercase tracking-widest font-black text-zinc-600 hover:text-white transition-colors border-t border-white/5 bg-black/20"
+                    className="w-full py-4 text-center text-xs uppercase tracking-widest font-black text-zinc-600 hover:text-current transition-colors border-t border-current/10 bg-current/5"
                   >
                     View All Results
                   </button>
