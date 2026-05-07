@@ -248,12 +248,12 @@ export default function Platform() {
 
       {/* Hero */}
       {heroMovie && (
-        <div className="relative h-[85vh] text-white w-full object-contain">
+        <div className="relative min-h-[85vh] flex flex-col justify-end pb-40 text-white w-full">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
-            className="absolute w-full h-full overflow-hidden"
+            className="absolute inset-0 w-full h-full overflow-hidden"
           >
             <motion.img
               initial={{ scale: 1 }}
@@ -265,14 +265,14 @@ export default function Platform() {
             />
             {/* Overlay Gradients to blend into the background */}
             <div className="absolute top-0 w-full h-full bg-gradient-to-r from-black/80 via-black/30 to-transparent pointer-events-none" />
-            <div className="absolute bottom-0 w-full h-32 bg-gradient-to-t from-[#141414] to-transparent pointer-events-none" />
+            <div className="absolute top-1/2 bottom-0 w-full bg-gradient-to-t from-[#141414] to-transparent pointer-events-none" />
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative pt-[25vh] md:pt-[35vh] px-4 md:px-12 w-full md:w-2/3 lg:w-1/2"
+            className="relative px-4 md:px-12 w-full md:w-2/3 lg:w-1/2"
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-4 drop-shadow-2xl">
               {heroMovie.title || heroMovie.name}
