@@ -77,9 +77,14 @@ export default function Platform() {
   const [heroMovie, setHeroMovie] = useState<any>(null);
   const [rows, setRows] = useState<{ title: string, data: any[], isLargeRow?: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'home' | 'tv' | 'movies' | 'new'>('home');
 
   const provider = PROVIDERS.find(p => p.id === providerId) || PROVIDERS[0];
   const { logo, color } = NAVBAR_COLORS[providerId || "8"] || NAVBAR_COLORS["8"];
+
+  useEffect(() => {
+    setActiveTab('home'); // Reset tab when provider changes
+  }, [providerId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -93,32 +98,72 @@ export default function Platform() {
     const fetchPlatformData = async () => {
       setLoading(true);
       try {
-        const [
-          trending,
-          action,
-          comedy,
-          horror,
-          romance,
-        ] = await Promise.all([
-          tmdbService.getMoviesByGenre("all", 1, "movie", undefined, providerId),
-          tmdbService.getMoviesByGenre("28", 1, "movie", undefined, providerId),
-          tmdbService.getMoviesByGenre("35", 1, "movie", undefined, providerId),
-          tmdbService.getMoviesByGenre("27", 1, "movie", undefined, providerId),
-          tmdbService.getMoviesByGenre("10749", 1, "movie", undefined, providerId),
-        ]);
+        let trending: any, r1: any, r2: any, r3: any, r4: any;
+        let r1Title = "", r2Title = "", r3Title = "", r4Title = "";
+        
+        if (activeTab === 'home') {
+          [trending, r1, r2, r3, r4] = await Promise.all([
+            tmdbService.getMoviesByGenre("all", 1, "movie", undefined, providerId),
+            tmdbService.getMoviesByGenre("28", 1, "movie", undefined, providerId),
+            tmdbService.getMoviesByGenre("35", 1, "movie", undefined, providerId),
+            tmdbService.getMoviesByGenre("all", 1, "tv", undefined, providerId),
+            tmdbService.getMoviesByGenre("10749", 1, "movie", undefined, providerId),
+          ]);
+          r1Title = "Action Movies";
+          r2Title = "Comedy Movies";
+          r3Title = "Popular TV Shows";
+          r4Title = "Romance Movies";
+        } else if (activeTab === 'tv') {
+          [trending, r1, r2, r3, r4] = await Promise.all([
+            tmdbService.getMoviesByGenre("all", 1, "tv", undefined, providerId),
+            tmdbService.getMoviesByGenre("10759", 1, "tv", undefined, providerId),
+            tmdbService.getMoviesByGenre("35", 1, "tv", undefined, providerId),
+            tmdbService.getMoviesByGenre("18", 1, "tv", undefined, providerId),
+            tmdbService.getMoviesByGenre("16", 1, "tv", undefined, providerId),
+          ]);
+          r1Title = "Action & Adventure";
+          r2Title = "Comedy TV";
+          r3Title = "Drama Series";
+          r4Title = "Animation";
+        } else if (activeTab === 'movies') {
+          [trending, r1, r2, r3, r4] = await Promise.all([
+            tmdbService.getMoviesByGenre("all", 1, "movie", undefined, providerId),
+            tmdbService.getMoviesByGenre("878", 1, "movie", undefined, providerId),
+            tmdbService.getMoviesByGenre("53", 1, "movie", undefined, providerId),
+            tmdbService.getMoviesByGenre("12", 1, "movie", undefined, providerId),
+            tmdbService.getMoviesByGenre("27", 1, "movie", undefined, providerId),
+          ]);
+          r1Title = "Sci-Fi Movies";
+          r2Title = "Thrillers";
+          r3Title = "Adventure Movies";
+          r4Title = "Horror Movies";
+        } else if (activeTab === 'new') {
+          const currentYear = new Date().getFullYear().toString();
+          [trending, r1, r2, r3, r4] = await Promise.all([
+            tmdbService.getMoviesByGenre("all", 1, "movie", currentYear, providerId),
+            tmdbService.getMoviesByGenre("all", 1, "tv", currentYear, providerId),
+            tmdbService.getMoviesByGenre("all", 2, "movie", currentYear, providerId),
+            tmdbService.getMoviesByGenre("all", 2, "tv", currentYear, providerId),
+            tmdbService.getMoviesByGenre("all", 3, "movie", currentYear, providerId),
+          ]);
+          r1Title = "New TV Shows";
+          r2Title = "More New Movies";
+          r3Title = "More New TV Shows";
+          r4Title = "Recent Releases";
+        }
 
-        if (trending.results.length > 0) {
+        if (trending?.results?.length > 0) {
           // Select a random popular movie for the hero
           const randomHero = trending.results[Math.floor(Math.random() * Math.min(5, trending.results.length))];
           setHeroMovie(randomHero);
         }
 
         setRows([
-          { title: `${provider.name.toUpperCase()} TRENDING`, data: trending.results.slice(0, 10), isLargeRow: true },
-          { title: "Action Movies", data: action.results },
-          { title: "Comedy Movies", data: comedy.results },
-          { title: "Horror Movies", data: horror.results },
-          { title: "Romance Movies", data: romance.results },
+          { title: `${provider.name.toUpperCase()} ${activeTab === 'new' ? 'NEW RELEASES' : 'TRENDING'}`, data: trending?.results?.slice(0, 10) || [], isLargeRow: true },
+          { title: r1Title, data: r1?.results || [] },
+          { title: r2Title, data: r2?.results || [] },
+          { title: r3Title, data: r3?.results || [] },
+          { title: r4Title, data: r4?.results || [] },
         ]);
       } catch (error) {
         console.error("Failed to fetch platform data", error);
@@ -128,7 +173,7 @@ export default function Platform() {
     };
 
     fetchPlatformData();
-  }, [providerId]);
+  }, [providerId, activeTab]);
 
   if (loading) {
     return (
@@ -178,10 +223,10 @@ export default function Platform() {
           
           {/* Desktop Nav */}
           <ul className="hidden md:flex gap-5 text-sm text-gray-300 font-medium">
-            <li className="text-white cursor-pointer transition hover:text-gray-300" onClick={() => navigate('/')}>Home</li>
-            <li className="cursor-pointer transition hover:text-gray-300" onClick={() => navigate('/tv')}>TV Shows</li>
-            <li className="cursor-pointer transition hover:text-gray-300" onClick={() => navigate('/movies')}>Movies</li>
-            <li className="cursor-pointer transition hover:text-gray-300">New & Popular</li>
+            <li className={`cursor-pointer transition hover:text-white ${activeTab === 'home' ? 'text-white font-bold' : ''}`} onClick={() => setActiveTab('home')}>Home</li>
+            <li className={`cursor-pointer transition hover:text-white ${activeTab === 'tv' ? 'text-white font-bold' : ''}`} onClick={() => setActiveTab('tv')}>TV Shows</li>
+            <li className={`cursor-pointer transition hover:text-white ${activeTab === 'movies' ? 'text-white font-bold' : ''}`} onClick={() => setActiveTab('movies')}>Movies</li>
+            <li className={`cursor-pointer transition hover:text-white ${activeTab === 'new' ? 'text-white font-bold' : ''}`} onClick={() => setActiveTab('new')}>New & Popular</li>
             <li className="cursor-pointer transition hover:text-gray-300" onClick={() => navigate('/watchlist')}>My List</li>
           </ul>
         </div>
