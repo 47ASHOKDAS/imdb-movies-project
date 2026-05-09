@@ -138,6 +138,9 @@ export const tmdbService = {
       'malayalam': 'ml'
     };
 
+    let fetchMovie = true;
+    let fetchTv = true;
+
     if (genreMap[name]) {
       params.with_genres = genreMap[name];
     } else if (langMap[name]) {
@@ -145,15 +148,50 @@ export const tmdbService = {
     } else if (name === 'award winners') {
       params.sort_by = 'vote_average.desc';
       params['vote_count.gte'] = '2000';
-    } else if (name === 'amazon originals') {
+    } else if (name === 'amazon originals' || name === 'included with prime') {
        // Just general popular for the provider
+    } else if (name === 'movies' || name === 'movie') {
+       fetchTv = false;
+    } else if (name === 'tv' || name === 'tv shows') {
+       fetchMovie = false;
     } else {
-       // fallback to search
-       return tmdbService.searchWithProvider(categoryName, providerId);
+       // fallback to search with multiple pages
+       const pList = await Promise.all([
+         tmdbService.searchWithProvider(categoryName, providerId, 1).catch(() => ({ results: [] })),
+         tmdbService.searchWithProvider(categoryName, providerId, 2).catch(() => ({ results: [] })),
+         tmdbService.searchWithProvider(categoryName, providerId, 3).catch(() => ({ results: [] })),
+       ]);
+       const allRes = pList.flatMap(p => p.results).map(m => (!m.media_type ? { ...m, media_type: m.first_air_date ? 'tv' : 'movie', title: m.name || m.title } : m));
+       const uniqueRes = Array.from(new Map(allRes.map(item => [`${item.id}-${item.media_type}`, item])).values());
+       return { results: uniqueRes };
     }
 
-    const data = await fetchTMDB<{ results: any[] }>("/discover/movie", params);
-    return data;
+    const promises = [];
+    if (fetchMovie) {
+       promises.push(
+         fetchTMDB<{ results: any[] }>("/discover/movie", { ...params, page: "1" }).catch(() => ({ results: [] })),
+         fetchTMDB<{ results: any[] }>("/discover/movie", { ...params, page: "2" }).catch(() => ({ results: [] })),
+         fetchTMDB<{ results: any[] }>("/discover/movie", { ...params, page: "3" }).catch(() => ({ results: [] }))
+       );
+    }
+    if (fetchTv) {
+       promises.push(
+         fetchTMDB<{ results: any[] }>("/discover/tv", { ...params, page: "1" }).catch(() => ({ results: [] })),
+         fetchTMDB<{ results: any[] }>("/discover/tv", { ...params, page: "2" }).catch(() => ({ results: [] })),
+         fetchTMDB<{ results: any[] }>("/discover/tv", { ...params, page: "3" }).catch(() => ({ results: [] }))
+       );
+    }
+    
+    const pages = await Promise.all(promises);
+    
+    const allResults = pages.flatMap(p => p.results).map(m => (!m.media_type ? { ...m, media_type: m.first_air_date ? 'tv' : 'movie', title: m.name || m.title } : m));
+    // remove duplicates based on id + media_type
+    const uniqueResults = Array.from(new Map(allResults.map(item => [`${item.id}-${item.media_type}`, item])).values());
+    
+    // Shuffle the results to mix TV and Movies
+    const shuffled = uniqueResults.sort(() => 0.5 - Math.random());
+    
+    return { results: shuffled };
   },
   getSimilarMovies: (id: string | number) =>
     fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
@@ -183,8 +221,8 @@ export const tmdbService = {
         }),
     };
   },
-  searchWithProvider: async (query: string, providerId: string) => {
-    const data = await fetchTMDB<{ results: any[] }>("/search/multi", { query });
+  searchWithProvider: async (query: string, providerId: string, page: number = 1) => {
+    const data = await fetchTMDB<{ results: any[] }>("/search/multi", { query, page: page.toString() });
     
     // Filter to only movies and tv shows
     const baseResults = data.results
