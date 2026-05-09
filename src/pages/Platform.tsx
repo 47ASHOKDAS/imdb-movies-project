@@ -3,7 +3,7 @@ import { Play, Info, Search, Bell, ChevronDown, User, ArrowLeft, Loader2, Chevro
 import { useParams, useNavigate } from 'react-router-dom';
 import { tmdbService } from '../services/tmdb';
 import { PROVIDERS } from '../components/layout/Sidebar';
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 const NAVBAR_COLORS: Record<string, { logo: string, color: string }> = {
   "8": { logo: "NETFLIX", color: "#E50914" },
@@ -74,7 +74,8 @@ export default function Platform() {
   const { name: providerId } = useParams();
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [heroMovie, setHeroMovie] = useState<any>(null);
+  const [heroMovies, setHeroMovies] = useState<any[]>([]);
+  const [heroIndex, setHeroIndex] = useState(0);
   const [rows, setRows] = useState<{ title: string, data: any[], isLargeRow?: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'home' | 'tv' | 'movies' | 'new'>('home');
@@ -182,9 +183,9 @@ export default function Platform() {
         }
 
         if (trending?.results?.length > 0) {
-          // Select a random popular movie for the hero
-          const randomHero = trending.results[Math.floor(Math.random() * Math.min(5, trending.results.length))];
-          setHeroMovie(randomHero);
+          // Keep top 5 trending movies for rotating hero
+          setHeroMovies(trending.results.slice(0, 5));
+          setHeroIndex(0);
         }
 
         setRows([
@@ -203,6 +204,17 @@ export default function Platform() {
 
     fetchPlatformData();
   }, [providerId, activeTab]);
+
+  useEffect(() => {
+    if (heroMovies.length <= 1) return;
+    
+    // Rotate hero movie every 8 seconds
+    const interval = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % heroMovies.length);
+    }, 8000);
+    
+    return () => clearInterval(interval);
+  }, [heroMovies]);
 
   if (loading) {
     return (
@@ -245,7 +257,7 @@ export default function Platform() {
           <h1 
              className="text-2xl md:text-4xl font-extrabold tracking-wider cursor-pointer" 
              style={{ fontFamily: 'Arial, sans-serif', transform: 'scaleY(1.2)', color: color }}
-             onClick={() => navigate('/')}
+             onClick={() => setActiveTab('home')}
           >
             {logo}
           </h1>
@@ -344,59 +356,67 @@ export default function Platform() {
       ) : (
         <>
           {/* Hero */}
-          {heroMovie && (
-            <div className="relative min-h-[85vh] flex flex-col justify-end pb-32 md:pb-48 text-white w-full">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1 }}
-                className="absolute inset-0 w-full h-full overflow-hidden"
-              >
-                <motion.img
-                  initial={{ scale: 1 }}
-                  animate={{ scale: 1.1 }}
-                  transition={{ duration: 20, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
-                  src={tmdbService.getImageUrl(heroMovie.backdrop_path || heroMovie.poster_path, "original")}
-                  alt={heroMovie.title || heroMovie.name}
-                  className="w-full h-full object-cover origin-center"
-                />
-                {/* Overlay Gradients to blend into the background */}
-                <div className="absolute inset-0 bg-black/20 pointer-events-none" />
-                <div className="absolute top-0 w-full h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
-                <div className="absolute bottom-0 w-full h-2/3 bg-gradient-to-t from-[#141414] via-[#141414]/80 to-transparent pointer-events-none" />
-              </motion.div>
+          {heroMovies.length > 0 && (
+            <div className="relative min-h-[85vh] flex flex-col justify-end pb-32 md:pb-48 text-white w-full overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={heroIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.5 }}
+                  className="absolute inset-0 w-full h-full"
+                >
+                  <motion.img
+                    initial={{ scale: 1 }}
+                    animate={{ scale: 1.15 }}
+                    transition={{ duration: 25, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
+                    src={tmdbService.getImageUrl(heroMovies[heroIndex].backdrop_path || heroMovies[heroIndex].poster_path, "original")}
+                    alt={heroMovies[heroIndex].title || heroMovies[heroIndex].name}
+                    className="w-full h-full object-cover origin-center"
+                  />
+                  {/* Overlay Gradients to blend into the background */}
+                  <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+                  <div className="absolute top-0 w-full h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-0 w-full h-3/4 bg-gradient-to-t from-[#141414] via-[#141414]/90 to-transparent pointer-events-none" />
+                </motion.div>
+              </AnimatePresence>
 
-              <motion.div 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="relative z-10 px-4 md:px-12 w-full md:w-2/3 lg:w-1/2"
-              >
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 drop-shadow-2xl text-balance">
-                  {heroMovie.title || heroMovie.name}
-                </h1>
-                
-                <p className="text-base md:text-lg lg:text-xl font-medium drop-shadow-lg mb-6 max-w-2xl line-clamp-3 text-gray-200">
-                  {heroMovie.overview}
-                </p>
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={heroIndex}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -30 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="relative z-10 px-4 md:px-12 w-full md:w-2/3 lg:w-1/2"
+                >
+                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] text-balance">
+                    {heroMovies[heroIndex].title || heroMovies[heroIndex].name}
+                  </h1>
+                  
+                  <p className="text-base md:text-lg lg:text-xl font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mb-6 max-w-2xl line-clamp-3 text-gray-100">
+                    {heroMovies[heroIndex].overview}
+                  </p>
 
-                <div className="flex gap-3 md:gap-4">
-                  <button 
-                     onClick={() => navigate(`/movie/${heroMovie.id}`)}
-                     className="flex items-center justify-center gap-2 bg-white text-black px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-white/80 transition cursor-pointer"
-                  >
-                    <Play className="w-5 h-5 md:w-6 md:h-6 fill-current" />
-                    Play
-                  </button>
-                  <button 
-                     onClick={() => navigate(`/movie/${heroMovie.id}`)}
-                     className="flex items-center justify-center gap-2 bg-gray-500/70 text-white px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-gray-500/50 transition cursor-pointer"
-                  >
-                    <Info className="w-5 h-5 md:w-6 md:h-6" />
-                    More Info
-                  </button>
-                </div>
-              </motion.div>
+                  <div className="flex gap-3 md:gap-4">
+                    <button 
+                       onClick={() => navigate(`/${heroMovies[heroIndex].media_type || 'movie'}/${heroMovies[heroIndex].id}`)}
+                       className="flex items-center justify-center gap-2 bg-white text-black px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-white/80 transition cursor-pointer"
+                    >
+                      <Play className="w-5 h-5 md:w-6 md:h-6 fill-current" />
+                      Play
+                    </button>
+                    <button 
+                       onClick={() => navigate(`/${heroMovies[heroIndex].media_type || 'movie'}/${heroMovies[heroIndex].id}`)}
+                       className="flex items-center justify-center gap-2 bg-gray-500/70 text-white px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-gray-500/50 transition cursor-pointer"
+                    >
+                      <Info className="w-5 h-5 md:w-6 md:h-6" />
+                      More Info
+                    </button>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
           )}
           
