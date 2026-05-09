@@ -494,7 +494,7 @@ export default function PrimeVideoPlatform({ providerId }: { providerId: string 
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const results = await tmdbService.searchWithProvider(searchQuery, providerId || "119");
+        const results = await tmdbService.getMoviesByCategoryName(searchQuery, providerId || "119");
         setSearchResults(results.results);
       } catch (error) {
         console.error("Platform search error", error);

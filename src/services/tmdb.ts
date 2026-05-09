@@ -103,6 +103,58 @@ export const tmdbService = {
       params,
     );
   },
+  getMoviesByCategoryName: async (categoryName: string, providerId: string) => {
+    // Map category name to TMDB discover params
+    const params: Record<string, string> = {
+      sort_by: "popularity.desc",
+      with_watch_providers: providerId,
+      watch_region: "IN",
+    };
+
+    const name = categoryName.toLowerCase();
+    
+    // Genres mapping
+    const genreMap: Record<string, string> = {
+      'action and adventure': '28,12',
+      'anime': '16',
+      'comedy': '35',
+      'documentary': '99',
+      'drama': '18',
+      'fantasy': '14',
+      'horror': '27',
+      'kids': '10751',
+      'mystery and thrillers': '9648,53',
+      'romance': '10749',
+      'science fiction': '878',
+      'suspense': '53'
+    };
+
+    // Language mapping
+    const langMap: Record<string, string> = {
+      'english': 'en',
+      'hindi': 'hi',
+      'telugu': 'te',
+      'tamil': 'ta',
+      'malayalam': 'ml'
+    };
+
+    if (genreMap[name]) {
+      params.with_genres = genreMap[name];
+    } else if (langMap[name]) {
+      params.with_original_language = langMap[name];
+    } else if (name === 'award winners') {
+      params.sort_by = 'vote_average.desc';
+      params['vote_count.gte'] = '2000';
+    } else if (name === 'amazon originals') {
+       // Just general popular for the provider
+    } else {
+       // fallback to search
+       return tmdbService.searchWithProvider(categoryName, providerId);
+    }
+
+    const data = await fetchTMDB<{ results: any[] }>("/discover/movie", params);
+    return data;
+  },
   getSimilarMovies: (id: string | number) =>
     fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
   getPersonDetails: (id: string | number) =>
