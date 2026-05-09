@@ -9,7 +9,8 @@ import {
   ChevronRight, 
   Menu,
   Check,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { tmdbService } from '../services/tmdb';
@@ -79,7 +80,7 @@ const Navbar = ({ activeTab, onTabChange, searchQuery, setSearchQuery, isSearchO
             </div>
           </div>
         <button className="hover:text-white transition-colors flex items-center space-x-2">
-          <User size={20} />
+          <img src="https://m.media-amazon.com/images/G/02/CerberusPrimeVideo-FN38FSBD/adult-1.png" alt="User Profile" className="w-8 h-8 rounded-sm object-cover" />
         </button>
       </div>
     </nav>
@@ -221,36 +222,103 @@ const Hero = ({ movies, navigate }: any) => {
 
 const VideoCard = ({ item, navigate }: any) => {
   const isPrime = Math.random() > 0.3; // Mock Prime badge
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
+  const [isFetchingTrailer, setIsFetchingTrailer] = useState(false);
+
+  const handlePlayTrailer = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isFetchingTrailer) return;
+    setIsFetchingTrailer(true);
+    try {
+      const details =
+        item.media_type === "tv" || (!item.media_type && item.first_air_date)
+          ? await tmdbService.getTvDetails(item.id)
+          : await tmdbService.getMovieDetails(item.id);
+      const trailer =
+        details.videos?.results?.find(
+          (v: any) => v.type === "Trailer" && v.site === "YouTube"
+        ) || details.videos?.results?.find((v: any) => v.site === "YouTube");
+      if (trailer) {
+        setTrailerKey(trailer.key);
+      } else {
+        alert("No trailer available for this title.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsFetchingTrailer(false);
+    }
+  };
 
   return (
-    <div onClick={() => navigate(`/${item.media_type || 'movie'}/${item.id}`)} className="relative flex-none w-[200px] md:w-[260px] lg:w-[300px] h-[112px] md:h-[146px] lg:h-[168px] rounded-md overflow-hidden group cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.12] hover:z-50 hover:shadow-2xl hover:shadow-black bg-gray-800 hover:ring-2 hover:ring-white/50">
-      <img 
-        src={tmdbService.getImageUrl(item.backdrop_path || item.poster_path, "w500")} 
-        alt={item.title || item.name} 
-        className="w-full h-full object-cover rounded-md"
-        loading="lazy"
-      />
-      
-      {/* Prime Badge */}
-      {isPrime && (
-        <div className="absolute top-2 left-2 bg-[#00a8e1] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm flex items-center shadow-md">
-          <Check size={10} className="mr-0.5" /> prime
-        </div>
-      )}
+    <>
+      <div onClick={() => navigate(`/${item.media_type || 'movie'}/${item.id}`)} className="relative flex-none w-[200px] md:w-[260px] lg:w-[300px] h-[112px] md:h-[146px] lg:h-[168px] rounded-md overflow-hidden group cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.12] hover:z-50 hover:shadow-2xl hover:shadow-black bg-gray-800 hover:ring-2 hover:ring-white/50">
+        <img 
+          src={tmdbService.getImageUrl(item.backdrop_path || item.poster_path, "w500")} 
+          alt={item.title || item.name} 
+          className="w-full h-full object-cover rounded-md"
+          loading="lazy"
+        />
+        
+        {/* Prime Badge */}
+        {isPrime && (
+          <div className="absolute top-2 left-2 bg-[#00a8e1] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm flex items-center shadow-md">
+            <Check size={10} className="mr-0.5" /> prime
+          </div>
+        )}
 
-      {/* Hover Overlay Details */}
-      <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 rounded-md">
-        <h3 className="text-white font-bold text-sm md:text-base truncate mb-2">{item.title || item.name}</h3>
-        <div className="flex items-center space-x-2">
-          <button className="bg-white rounded-full p-2 hover:bg-gray-200 transition-colors">
-            <Play size={14} className="text-black fill-current" />
-          </button>
-          <button className="border border-gray-400 rounded-full p-2 hover:border-white hover:text-white text-gray-400 transition-colors">
-            <Plus size={14} />
-          </button>
+        {/* Hover Overlay Details */}
+        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 rounded-md">
+          <h3 className="text-white font-bold text-sm md:text-base truncate mb-2">{item.title || item.name}</h3>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={handlePlayTrailer} 
+              className="bg-white rounded-full p-2 hover:bg-gray-200 transition-colors"
+            >
+              {isFetchingTrailer ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+              ) : (
+                <Play size={14} className="text-black fill-current" />
+              )}
+            </button>
+            <button className="border border-gray-400 rounded-full p-2 hover:border-white hover:text-white text-gray-400 transition-colors">
+              <Plus size={14} />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+      
+      {/* Trailer Modal via Portal (using fixed position, no need portal here since our structure works) */}
+      <AnimatePresence>
+        {trailerKey && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-12" onClick={(e) => e.stopPropagation()}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="relative w-full max-w-6xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/20"
+            >
+              <button
+                onClick={() => setTrailerKey(null)}
+                className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1`}
+                title="Trailer"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
@@ -298,7 +366,7 @@ const VideoCarousel = ({ title, items, navigate }: any) => {
         <div 
           ref={rowRef}
           onScroll={handleScroll}
-          className="flex space-x-3 overflow-x-auto scrollbar-hide py-6 px-2"
+          className="flex space-x-3 overflow-x-auto overflow-y-visible scrollbar-hide py-12 -my-6 px-4"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {items.map((item: any) => (
@@ -332,6 +400,63 @@ const Footer = () => {
       </div>
       <p>© 1996-2026, Amazon.com, Inc. or its affiliates</p>
     </footer>
+  );
+};
+
+const CATEGORY_CARDS = [
+  { id: 1, title: 'Action and adventure', glow: 'bg-blue-500' },
+  { id: 2, title: 'Anime', glow: 'bg-indigo-500' },
+  { id: 3, title: 'Comedy', glow: 'bg-yellow-500' },
+  { id: 4, title: 'Documentary', glow: 'bg-green-500' },
+  { id: 5, title: 'Drama', glow: 'bg-red-500' },
+  { id: 6, title: 'Fantasy', glow: 'bg-purple-500' },
+  { id: 7, title: 'Horror', glow: 'bg-gray-500' },
+  { id: 8, title: 'Kids', glow: 'bg-teal-500' },
+  { id: 9, title: 'Mystery and thrillers', glow: 'bg-cyan-500' },
+  { id: 10, title: 'Romance', glow: 'bg-pink-500' },
+  { id: 11, title: 'Science fiction', glow: 'bg-blue-400' },
+  { id: 12, title: 'Suspense', glow: 'bg-red-600' },
+];
+
+const CategoryCard: React.FC<{ title: string; glow: string }> = ({ title, glow }) => {
+  return (
+    <div className="relative h-28 rounded-xl overflow-hidden cursor-pointer group flex items-center p-6 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 hover:border-white transition-all duration-300">
+      <div className={`absolute -right-10 -bottom-10 w-32 h-32 rounded-full opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-2xl ${glow}`} />
+      <h3 className="text-white font-bold text-lg relative z-10 drop-shadow-md tracking-wide">{title}</h3>
+    </div>
+  );
+};
+
+const MegaMenu = () => {
+  return (
+    <div className="absolute top-0 right-0 w-[380px] bg-[#0f171e] h-full min-h-[85vh] border-l border-gray-800 p-8 pt-12 z-10 text-sm shadow-2xl">
+      <div className="mb-10">
+        <h3 className="text-white font-extrabold text-lg mb-4 tracking-wide">Top categories</h3>
+        <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Included with Prime</span>
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Amazon Originals</span>
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Movies</span>
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">TV</span>
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Kids</span>
+        </div>
+      </div>
+      <div className="mb-10">
+        <h3 className="text-white font-extrabold text-lg mb-4 tracking-wide">Audio languages</h3>
+        <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">English</span>
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Hindi</span>
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Telugu</span>
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Tamil</span>
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Malayalam</span>
+        </div>
+      </div>
+       <div className="mb-10">
+        <h3 className="text-white font-extrabold text-lg mb-4 tracking-wide">Other categories</h3>
+        <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Award winners</span>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -497,6 +622,28 @@ export default function PrimeVideoPlatform({ providerId }: { providerId: string 
                 <p className="text-lg">Your search for "{searchQuery}" did not have any matches.</p>
               </div>
             )}
+          </div>
+        ) : activeTab === 'new' ? (
+          <div className="pt-24 min-h-[85vh]">
+            <main className="px-12 py-10 relative h-full">
+              <h1 className="text-[32px] font-extrabold text-white mb-8 tracking-tight">
+                Categories
+              </h1>
+
+              {/* Categories Grid (Partially obscured by MegaMenu in the design) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pr-[400px]">
+                {CATEGORY_CARDS.map((category) => (
+                  <CategoryCard 
+                    key={category.id} 
+                    title={category.title} 
+                    glow={category.glow} 
+                  />
+                ))}
+              </div>
+
+              {/* Floating Mega Menu Overlay exactly as shown in the image */}
+              <MegaMenu />
+            </main>
           </div>
         ) : (
           <>
