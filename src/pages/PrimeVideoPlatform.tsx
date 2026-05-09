@@ -468,9 +468,12 @@ export default function PrimeVideoPlatform({ providerId }: { providerId: string 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
+  const [hasMoreSearch, setHasMoreSearch] = useState(true);
   
   const [heroMovies, setHeroMovies] = useState<any[]>([]);
   const [rows, setRows] = useState<{ title: string, data: any[] }[]>([]);
+  const loaderRef = useRef<HTMLDivElement>(null);
 
   const handleTabChange = (tab: 'home' | 'tv' | 'movies' | 'new') => {
     setActiveTab(tab);
@@ -488,14 +491,19 @@ export default function PrimeVideoPlatform({ providerId }: { providerId: string 
     if (searchQuery.trim().length === 0) {
       setSearchResults([]);
       setIsSearching(false);
+      setSearchPage(1);
+      setHasMoreSearch(true);
       return;
     }
 
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
+      setSearchPage(1);
       try {
-        const results = await tmdbService.getMoviesByCategoryName(searchQuery, providerId || "119");
+        const results = await tmdbService.getMoviesByCategoryName(searchQuery, providerId || "119", 1);
         setSearchResults(results.results);
+        if (results.results.length < 10) setHasMoreSearch(false);
+        else setHasMoreSearch(true);
       } catch (error) {
         console.error("Platform search error", error);
       } finally {
@@ -505,6 +513,52 @@ export default function PrimeVideoPlatform({ providerId }: { providerId: string 
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, providerId]);
+
+  // Load more search results when page increments
+  useEffect(() => {
+    if (searchPage === 1 || searchQuery.trim().length === 0 || !hasMoreSearch) return;
+    
+    const loadMore = async () => {
+      setIsSearching(true);
+      try {
+        const results = await tmdbService.getMoviesByCategoryName(searchQuery, providerId || "119", searchPage);
+        if (results.results.length === 0) {
+          setHasMoreSearch(false);
+        } else {
+          setSearchResults(prev => {
+            const newRes = [...prev, ...results.results];
+            // keep unique
+            return Array.from(new Map(newRes.map(item => [`${item.id}-${item.media_type}`, item])).values());
+          });
+        }
+      } catch (error) {
+        console.error("Platform search pagination error", error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+    loadMore();
+  }, [searchPage]);
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    if (searchQuery.trim().length === 0 || !hasMoreSearch || isSearching) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setSearchPage(prev => prev + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [searchQuery, hasMoreSearch, isSearching]);
 
   useEffect(() => {
     const fetchPlatformData = async () => {
@@ -607,16 +661,23 @@ export default function PrimeVideoPlatform({ providerId }: { providerId: string 
             <h2 className="text-gray-400 text-xl mb-6">
               Search results for: <span className="text-white font-semibold">{searchQuery}</span>
             </h2>
-            {isSearching ? (
+            {isSearching && searchPage === 1 ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="w-12 h-12 text-[#00a8e1] animate-spin" />
               </div>
             ) : searchResults.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {searchResults.map((item: any) => (
-                  <VideoCard key={item.id} item={item} navigate={navigate} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {searchResults.map((item: any) => (
+                    <VideoCard key={item.id} item={item} navigate={navigate} />
+                  ))}
+                </div>
+                {hasMoreSearch && (
+                  <div ref={loaderRef} className="flex justify-center py-10">
+                    <Loader2 className="w-8 h-8 text-[#00a8e1] animate-spin" />
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-20 text-gray-400">
                 <p className="text-lg">Your search for "{searchQuery}" did not have any matches.</p>

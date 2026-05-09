@@ -103,12 +103,13 @@ export const tmdbService = {
       params,
     );
   },
-  getMoviesByCategoryName: async (categoryName: string, providerId: string) => {
+  getMoviesByCategoryName: async (categoryName: string, providerId: string, page: number = 1) => {
     // Map category name to TMDB discover params
     const params: Record<string, string> = {
       sort_by: "popularity.desc",
       with_watch_providers: providerId,
       watch_region: "IN",
+      page: page.toString(),
     };
 
     const name = categoryName.toLowerCase();
@@ -155,13 +156,9 @@ export const tmdbService = {
     } else if (name === 'tv' || name === 'tv shows') {
        fetchMovie = false;
     } else {
-       // fallback to search with multiple pages
-       const pList = await Promise.all([
-         tmdbService.searchWithProvider(categoryName, providerId, 1).catch(() => ({ results: [] })),
-         tmdbService.searchWithProvider(categoryName, providerId, 2).catch(() => ({ results: [] })),
-         tmdbService.searchWithProvider(categoryName, providerId, 3).catch(() => ({ results: [] })),
-       ]);
-       const allRes = pList.flatMap(p => p.results).map(m => (!m.media_type ? { ...m, media_type: m.first_air_date ? 'tv' : 'movie', title: m.name || m.title } : m));
+       // fallback to search
+       const p = await tmdbService.searchWithProvider(categoryName, providerId, page).catch(() => ({ results: [] }));
+       const allRes = p.results.map(m => (!m.media_type ? { ...m, media_type: m.first_air_date ? 'tv' : 'movie', title: m.name || m.title } : m));
        const uniqueRes = Array.from(new Map(allRes.map(item => [`${item.id}-${item.media_type}`, item])).values());
        return { results: uniqueRes };
     }
@@ -169,16 +166,12 @@ export const tmdbService = {
     const promises = [];
     if (fetchMovie) {
        promises.push(
-         fetchTMDB<{ results: any[] }>("/discover/movie", { ...params, page: "1" }).catch(() => ({ results: [] })),
-         fetchTMDB<{ results: any[] }>("/discover/movie", { ...params, page: "2" }).catch(() => ({ results: [] })),
-         fetchTMDB<{ results: any[] }>("/discover/movie", { ...params, page: "3" }).catch(() => ({ results: [] }))
+         fetchTMDB<{ results: any[] }>("/discover/movie", params).catch(() => ({ results: [] }))
        );
     }
     if (fetchTv) {
        promises.push(
-         fetchTMDB<{ results: any[] }>("/discover/tv", { ...params, page: "1" }).catch(() => ({ results: [] })),
-         fetchTMDB<{ results: any[] }>("/discover/tv", { ...params, page: "2" }).catch(() => ({ results: [] })),
-         fetchTMDB<{ results: any[] }>("/discover/tv", { ...params, page: "3" }).catch(() => ({ results: [] }))
+         fetchTMDB<{ results: any[] }>("/discover/tv", params).catch(() => ({ results: [] }))
        );
     }
     
@@ -188,10 +181,12 @@ export const tmdbService = {
     // remove duplicates based on id + media_type
     const uniqueResults = Array.from(new Map(allResults.map(item => [`${item.id}-${item.media_type}`, item])).values());
     
-    // Shuffle the results to mix TV and Movies
-    const shuffled = uniqueResults.sort(() => 0.5 - Math.random());
+    // Shuffle the results to mix TV and Movies across the single page effectively
+    // To ensure consistency of display instead of complete randomness which might cause duplicates across pages, we may omit shuffle or sort by popularity
+    // Sorting by TMDB popularity is better
+    const sorted = uniqueResults.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
     
-    return { results: shuffled };
+    return { results: sorted };
   },
   getSimilarMovies: (id: string | number) =>
     fetchTMDB<{ results: any[] }>(`/movie/${id}/similar`),
