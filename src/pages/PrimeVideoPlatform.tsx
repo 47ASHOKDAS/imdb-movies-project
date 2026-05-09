@@ -140,7 +140,7 @@ const Hero = ({ movies, navigate }: any) => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="relative z-20 h-full flex flex-col justify-end pb-20 px-4 md:px-12 lg:w-1/2"
+          className="relative z-20 h-full flex flex-col justify-end pb-32 md:pb-48 px-4 md:px-12 lg:w-1/2"
         >
           <div className="flex items-center space-x-2 mb-2">
             <span className="bg-[#00a8e1] text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">
@@ -501,7 +501,7 @@ export default function PrimeVideoPlatform({ providerId }: { providerId: string 
         ) : (
           <>
             <Hero movies={heroMovies} navigate={navigate} />
-            <div className="mt-[-80px] md:mt-[-120px] relative z-10">
+            <div className="-mt-16 md:-mt-32 relative z-30 pb-16">
               {rows.map((row, index) => (
                 <VideoCarousel 
                   key={index} 
