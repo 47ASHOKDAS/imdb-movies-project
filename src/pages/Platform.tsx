@@ -5,6 +5,8 @@ import { tmdbService } from '../services/tmdb';
 import { PROVIDERS } from '../components/layout/Sidebar';
 import { motion, AnimatePresence } from "motion/react";
 
+import PrimeVideoPlatform from './PrimeVideoPlatform';
+
 const NAVBAR_COLORS: Record<string, { logo: string, color: string }> = {
   "8": { logo: "NETFLIX", color: "#E50914" },
   "119": { logo: "PRIME VIDEO", color: "#00A8E1" },
@@ -87,6 +89,10 @@ export default function Platform() {
 
   const provider = PROVIDERS.find(p => p.id === providerId) || PROVIDERS[0];
   const { logo, color } = NAVBAR_COLORS[providerId || "8"] || NAVBAR_COLORS["8"];
+
+  if (providerId === "119") {
+    return <PrimeVideoPlatform providerId={providerId} />;
+  }
 
   useEffect(() => {
     setActiveTab('home'); // Reset tab when provider changes
