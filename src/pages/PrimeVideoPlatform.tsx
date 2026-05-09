@@ -418,42 +418,42 @@ const CATEGORY_CARDS = [
   { id: 12, title: 'Suspense', glow: 'bg-red-600' },
 ];
 
-const CategoryCard: React.FC<{ title: string; glow: string }> = ({ title, glow }) => {
+const CategoryCard: React.FC<{ title: string; glow: string; onClick: () => void }> = ({ title, glow, onClick }) => {
   return (
-    <div className="relative h-28 rounded-xl overflow-hidden cursor-pointer group flex items-center p-6 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 hover:border-white transition-all duration-300">
+    <div onClick={onClick} className="relative h-28 rounded-xl overflow-hidden cursor-pointer group flex items-center p-6 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 hover:border-white transition-all duration-300">
       <div className={`absolute -right-10 -bottom-10 w-32 h-32 rounded-full opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-2xl ${glow}`} />
       <h3 className="text-white font-bold text-lg relative z-10 drop-shadow-md tracking-wide">{title}</h3>
     </div>
   );
 };
 
-const MegaMenu = () => {
+const MegaMenu = ({ onCategoryClick, onTabChange }: { onCategoryClick: (name: string) => void, onTabChange: (tab: any) => void }) => {
   return (
     <div className="absolute top-0 right-0 w-[380px] bg-[#0f171e] h-full min-h-[85vh] border-l border-gray-800 p-8 pt-12 z-10 text-sm shadow-2xl">
       <div className="mb-10">
         <h3 className="text-white font-extrabold text-lg mb-4 tracking-wide">Top categories</h3>
         <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Included with Prime</span>
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Amazon Originals</span>
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Movies</span>
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">TV</span>
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Kids</span>
+          <span onClick={() => onTabChange('home')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Included with Prime</span>
+          <span onClick={() => onCategoryClick('Amazon Originals')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Amazon Originals</span>
+          <span onClick={() => onTabChange('movies')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Movies</span>
+          <span onClick={() => onTabChange('tv')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">TV</span>
+          <span onClick={() => onCategoryClick('Kids')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Kids</span>
         </div>
       </div>
       <div className="mb-10">
         <h3 className="text-white font-extrabold text-lg mb-4 tracking-wide">Audio languages</h3>
         <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">English</span>
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Hindi</span>
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Telugu</span>
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Tamil</span>
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Malayalam</span>
+          <span onClick={() => onCategoryClick('English')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">English</span>
+          <span onClick={() => onCategoryClick('Hindi')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Hindi</span>
+          <span onClick={() => onCategoryClick('Telugu')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Telugu</span>
+          <span onClick={() => onCategoryClick('Tamil')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Tamil</span>
+          <span onClick={() => onCategoryClick('Malayalam')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Malayalam</span>
         </div>
       </div>
        <div className="mb-10">
         <h3 className="text-white font-extrabold text-lg mb-4 tracking-wide">Other categories</h3>
         <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-          <span className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Award winners</span>
+          <span onClick={() => onCategoryClick('Award winners')} className="text-gray-400 hover:text-white cursor-pointer transition-colors font-medium">Award winners</span>
         </div>
       </div>
     </div>
@@ -637,12 +637,16 @@ export default function PrimeVideoPlatform({ providerId }: { providerId: string 
                     key={category.id} 
                     title={category.title} 
                     glow={category.glow} 
+                    onClick={() => {
+                      setSearchQuery(category.title);
+                      // Let's also hide the categories view by pretending we just searched
+                    }}
                   />
                 ))}
               </div>
 
               {/* Floating Mega Menu Overlay exactly as shown in the image */}
-              <MegaMenu />
+              <MegaMenu onCategoryClick={(name) => setSearchQuery(name)} onTabChange={handleTabChange} />
             </main>
           </div>
         ) : (
