@@ -78,12 +78,19 @@ export default function Platform() {
   const [rows, setRows] = useState<{ title: string, data: any[], isLargeRow?: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'home' | 'tv' | 'movies' | 'new'>('home');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const provider = PROVIDERS.find(p => p.id === providerId) || PROVIDERS[0];
   const { logo, color } = NAVBAR_COLORS[providerId || "8"] || NAVBAR_COLORS["8"];
 
   useEffect(() => {
     setActiveTab('home'); // Reset tab when provider changes
+    setSearchQuery("");
+    setIsSearchOpen(false);
   }, [providerId]);
 
   useEffect(() => {
@@ -93,6 +100,28 @@ export default function Platform() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim().length === 0) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await tmdbService.searchWithProvider(searchQuery, providerId || "8");
+        setSearchResults(results.results);
+      } catch (error) {
+        console.error("Platform search error", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, providerId]);
 
   useEffect(() => {
     const fetchPlatformData = async () => {
@@ -232,7 +261,29 @@ export default function Platform() {
         </div>
 
         <div className="flex items-center gap-4 text-white">
-          <Search className="w-5 h-5 cursor-pointer" />
+          <div className="flex items-center">
+            <div className={`flex items-center transition-all duration-300 ${isSearchOpen ? 'w-48 bg-black/50 border border-white/80 px-2' : 'w-5 bg-transparent border-transparent px-0'} overflow-hidden`}>
+              <Search 
+                className="w-5 h-5 cursor-pointer flex-shrink-0" 
+                onClick={() => {
+                  setIsSearchOpen(!isSearchOpen);
+                  if (!isSearchOpen) {
+                    setTimeout(() => searchInputRef.current?.focus(), 100);
+                  } else {
+                    setSearchQuery("");
+                  }
+                }} 
+              />
+              <input 
+                ref={searchInputRef}
+                type="text" 
+                placeholder="Titles, people, genres" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`bg-transparent text-sm text-white placeholder-gray-400 outline-none w-full ml-2 transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 py-1' : 'opacity-0 py-0'}`}
+              />
+            </div>
+          </div>
           <span className="hidden md:block text-sm cursor-pointer">Kids</span>
           <Bell className="w-5 h-5 cursor-pointer" />
           
@@ -246,79 +297,128 @@ export default function Platform() {
         </div>
       </nav>
 
-      {/* Hero */}
-      {heroMovie && (
-        <div className="relative min-h-[85vh] flex flex-col justify-end pb-40 text-white w-full">
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1 }}
-            className="absolute inset-0 w-full h-full overflow-hidden"
-          >
-            <motion.img
-              initial={{ scale: 1 }}
-              animate={{ scale: 1.1 }}
-              transition={{ duration: 20, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
-              src={tmdbService.getImageUrl(heroMovie.backdrop_path || heroMovie.poster_path, "original")}
-              alt={heroMovie.title || heroMovie.name}
-              className="w-full h-full object-cover origin-center"
-            />
-            {/* Overlay Gradients to blend into the background */}
-            <div className="absolute top-0 w-full h-full bg-gradient-to-r from-black/80 via-black/30 to-transparent pointer-events-none" />
-            <div className="absolute top-1/2 bottom-0 w-full bg-gradient-to-t from-[#141414] to-transparent pointer-events-none" />
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative px-4 md:px-12 w-full md:w-2/3 lg:w-1/2"
-          >
-            <h1 className="text-5xl md:text-7xl font-bold mb-4 drop-shadow-2xl">
-              {heroMovie.title || heroMovie.name}
-            </h1>
-            
-            <p className="text-lg md:text-xl font-medium drop-shadow-lg mb-6 max-w-2xl line-clamp-3">
-              {heroMovie.overview}
-            </p>
-
-            <div className="flex gap-4">
-              <button 
-                 onClick={() => navigate(`/movie/${heroMovie.id}`)}
-                 className="flex items-center gap-2 bg-white text-black px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-white/80 transition cursor-pointer"
-              >
-                <Play className="w-5 h-5 md:w-6 md:h-6 fill-current" />
-                Play
-              </button>
-              <button 
-                 onClick={() => navigate(`/movie/${heroMovie.id}`)}
-                 className="flex items-center gap-2 bg-gray-500/70 text-white px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-gray-500/50 transition"
-              >
-                <Info className="w-5 h-5 md:w-6 md:h-6" />
-                More Info
-              </button>
+      {/* Main Content Area */}
+      {searchQuery.trim().length > 0 ? (
+        <div className="pt-32 px-4 md:px-12 pb-20 min-h-[70vh]">
+          <h2 className="text-gray-400 text-xl mb-6">
+            Explore titles related to: <span className="text-white font-semibold">{searchQuery}</span>
+          </h2>
+          {isSearching ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-12 h-12 text-white animate-spin" />
             </div>
-          </motion.div>
+          ) : searchResults.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {searchResults.map((movie: any) => (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  key={movie.id}
+                  onClick={() => navigate(`/${movie.media_type || 'movie'}/${movie.id}`)}
+                  className="cursor-pointer group"
+                >
+                  <img
+                    src={tmdbService.getImageUrl(movie.poster_path)}
+                    alt={movie.title || movie.name}
+                    className="w-full aspect-[2/3] object-cover rounded-md transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <p className="mt-2 text-sm text-center line-clamp-1 group-hover:text-white text-gray-300 transition-colors">
+                    {movie.title || movie.name}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 text-gray-400">
+              <p className="text-lg">Your search for "{searchQuery}" did not have any matches on {provider.name}.</p>
+              <p className="mt-2 text-sm text-gray-500">Suggestions:</p>
+              <ul className="list-disc text-sm text-gray-500 inline-block text-left mt-2 pl-4">
+                <li>Try different keywords</li>
+                <li>Looking for a movie or TV show?</li>
+                <li>Try using a movie, TV show title, an actor or director</li>
+                <li>Note: This only searches the {provider.name} catalog.</li>
+              </ul>
+            </div>
+          )}
         </div>
+      ) : (
+        <>
+          {/* Hero */}
+          {heroMovie && (
+            <div className="relative min-h-[85vh] flex flex-col justify-end pb-32 md:pb-48 text-white w-full">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+                className="absolute inset-0 w-full h-full overflow-hidden"
+              >
+                <motion.img
+                  initial={{ scale: 1 }}
+                  animate={{ scale: 1.1 }}
+                  transition={{ duration: 20, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
+                  src={tmdbService.getImageUrl(heroMovie.backdrop_path || heroMovie.poster_path, "original")}
+                  alt={heroMovie.title || heroMovie.name}
+                  className="w-full h-full object-cover origin-center"
+                />
+                {/* Overlay Gradients to blend into the background */}
+                <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+                <div className="absolute top-0 w-full h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
+                <div className="absolute bottom-0 w-full h-2/3 bg-gradient-to-t from-[#141414] via-[#141414]/80 to-transparent pointer-events-none" />
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="relative z-10 px-4 md:px-12 w-full md:w-2/3 lg:w-1/2"
+              >
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 drop-shadow-2xl text-balance">
+                  {heroMovie.title || heroMovie.name}
+                </h1>
+                
+                <p className="text-base md:text-lg lg:text-xl font-medium drop-shadow-lg mb-6 max-w-2xl line-clamp-3 text-gray-200">
+                  {heroMovie.overview}
+                </p>
+
+                <div className="flex gap-3 md:gap-4">
+                  <button 
+                     onClick={() => navigate(`/movie/${heroMovie.id}`)}
+                     className="flex items-center justify-center gap-2 bg-white text-black px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-white/80 transition cursor-pointer"
+                  >
+                    <Play className="w-5 h-5 md:w-6 md:h-6 fill-current" />
+                    Play
+                  </button>
+                  <button 
+                     onClick={() => navigate(`/movie/${heroMovie.id}`)}
+                     className="flex items-center justify-center gap-2 bg-gray-500/70 text-white px-6 py-2 md:py-3 rounded md:text-lg font-semibold hover:bg-gray-500/50 transition cursor-pointer"
+                  >
+                    <Info className="w-5 h-5 md:w-6 md:h-6" />
+                    More Info
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+          
+          {/* Rows */}
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="-mt-16 md:-mt-32 relative z-20 pb-16"
+          >
+            {rows.map((row, index) => (
+              <MovieRow 
+                key={index}
+                title={row.title}
+                data={row.data}
+                isLargeRow={row.isLargeRow}
+                navigate={navigate}
+              />
+            ))}
+          </motion.div>
+        </>
       )}
-      
-      {/* Rows */}
-      <motion.div 
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-        className="-mt-32 relative z-20"
-      >
-        {rows.map((row, index) => (
-          <MovieRow 
-            key={index}
-            title={row.title}
-            data={row.data}
-            isLargeRow={row.isLargeRow}
-            navigate={navigate}
-          />
-        ))}
-      </motion.div>
 
       {/* Footer */}
       <footer className="max-w-4xl mx-auto px-4 py-16 text-gray-400 text-sm">

@@ -131,6 +131,49 @@ export const tmdbService = {
         }),
     };
   },
+  searchWithProvider: async (query: string, providerId: string) => {
+    const data = await fetchTMDB<{ results: any[] }>("/search/multi", { query });
+    
+    // Filter to only movies and tv shows
+    const baseResults = data.results
+      .filter(
+        (m) =>
+          (m.media_type === "movie" || m.media_type === "tv") &&
+          (m.original_language === "en" || m.original_language === "hi")
+      )
+      .map((m) => {
+        if (m.media_type === "tv") {
+          return { ...m, title: m.name, release_date: m.first_air_date };
+        }
+        return m;
+      });
+
+    // Check watch providers for each result
+    const filteredResults = await Promise.all(
+      baseResults.map(async (item) => {
+        try {
+          const providersData = await fetchTMDB<any>(`/${item.media_type}/${item.id}/watch/providers`);
+          const inRegion = providersData.results?.IN || providersData.results?.US;
+          
+          if (!inRegion) return null;
+
+          const hasProvider = 
+            inRegion.flatrate?.some((p: any) => p.provider_id.toString() === providerId.toString()) ||
+            inRegion.rent?.some((p: any) => p.provider_id.toString() === providerId.toString()) ||
+            inRegion.buy?.some((p: any) => p.provider_id.toString() === providerId.toString());
+            
+          return hasProvider ? item : null;
+        } catch (e) {
+          return null;
+        }
+      })
+    );
+
+    return {
+      ...data,
+      results: filteredResults.filter(Boolean)
+    };
+  },
   getMovieDetails: (id: string | number) =>
     fetchTMDB<any>(`/movie/${id}`, {
       append_to_response: "credits,videos,watch/providers",
