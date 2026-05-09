@@ -94,6 +94,12 @@ export default function Platform() {
     setIsSearchOpen(false);
   }, [providerId]);
 
+  const handleTabChange = (tab: 'home' | 'tv' | 'movies' | 'new') => {
+    setActiveTab(tab);
+    setSearchQuery("");
+    setIsSearchOpen(false);
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
@@ -257,32 +263,34 @@ export default function Platform() {
           <h1 
              className="text-2xl md:text-4xl font-extrabold tracking-wider cursor-pointer" 
              style={{ fontFamily: 'Arial, sans-serif', transform: 'scaleY(1.2)', color: color }}
-             onClick={() => setActiveTab('home')}
+             onClick={() => handleTabChange('home')}
           >
             {logo}
           </h1>
           
           {/* Desktop Nav */}
           <ul className="hidden md:flex gap-5 text-sm text-gray-300 font-medium">
-            <li className={`cursor-pointer transition hover:text-white ${activeTab === 'home' ? 'text-white font-bold' : ''}`} onClick={() => setActiveTab('home')}>Home</li>
-            <li className={`cursor-pointer transition hover:text-white ${activeTab === 'tv' ? 'text-white font-bold' : ''}`} onClick={() => setActiveTab('tv')}>TV Shows</li>
-            <li className={`cursor-pointer transition hover:text-white ${activeTab === 'movies' ? 'text-white font-bold' : ''}`} onClick={() => setActiveTab('movies')}>Movies</li>
-            <li className={`cursor-pointer transition hover:text-white ${activeTab === 'new' ? 'text-white font-bold' : ''}`} onClick={() => setActiveTab('new')}>New & Popular</li>
+            <li className={`cursor-pointer transition hover:text-white ${!searchQuery && activeTab === 'home' ? 'text-white font-bold' : ''}`} onClick={() => handleTabChange('home')}>Home</li>
+            <li className={`cursor-pointer transition hover:text-white ${!searchQuery && activeTab === 'tv' ? 'text-white font-bold' : ''}`} onClick={() => handleTabChange('tv')}>TV Shows</li>
+            <li className={`cursor-pointer transition hover:text-white ${!searchQuery && activeTab === 'movies' ? 'text-white font-bold' : ''}`} onClick={() => handleTabChange('movies')}>Movies</li>
+            <li className={`cursor-pointer transition hover:text-white ${!searchQuery && activeTab === 'new' ? 'text-white font-bold' : ''}`} onClick={() => handleTabChange('new')}>New & Popular</li>
             <li className="cursor-pointer transition hover:text-gray-300" onClick={() => navigate('/watchlist')}>My List</li>
           </ul>
         </div>
 
         <div className="flex items-center gap-4 text-white">
           <div className="flex items-center">
-            <div className={`flex items-center transition-all duration-300 ${isSearchOpen ? 'w-48 bg-black/50 border border-white/80 px-2' : 'w-5 bg-transparent border-transparent px-0'} overflow-hidden`}>
+            <div className={`flex items-center transition-all duration-300 ${isSearchOpen || searchQuery.length > 0 ? 'w-48 bg-black/50 border border-white/80 px-2' : 'w-5 bg-transparent border-transparent px-0'} overflow-hidden`}>
               <Search 
                 className="w-5 h-5 cursor-pointer flex-shrink-0" 
                 onClick={() => {
-                  setIsSearchOpen(!isSearchOpen);
-                  if (!isSearchOpen) {
-                    setTimeout(() => searchInputRef.current?.focus(), 100);
-                  } else {
+                  if (searchQuery.length > 0) {
                     setSearchQuery("");
+                  } else {
+                    setIsSearchOpen(!isSearchOpen);
+                    if (!isSearchOpen) {
+                      setTimeout(() => searchInputRef.current?.focus(), 100);
+                    }
                   }
                 }} 
               />
@@ -292,7 +300,7 @@ export default function Platform() {
                 placeholder="Titles, people, genres" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`bg-transparent text-sm text-white placeholder-gray-400 outline-none w-full ml-2 transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 py-1' : 'opacity-0 py-0'}`}
+                className={`bg-transparent text-sm text-white placeholder-gray-400 outline-none w-full ml-2 transition-opacity duration-300 ${isSearchOpen || searchQuery.length > 0 ? 'opacity-100 py-1' : 'opacity-0 py-0'}`}
               />
             </div>
           </div>
