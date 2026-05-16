@@ -122,10 +122,10 @@ const MovieDetail: React.FC = () => {
     const imdbId = movie?.imdb_id;
 
     if (serverIndex === 3) {
-      // Auto Select Logic
+      // Auto Select Logic: Iterative Fallback
       setIsChecking(true);
       try {
-        // 1. Check Server 1 (Vidlink) via API
+        // Step 1: Check Server 1 (Vidlink) via their status API
         const vidlinkApi = isTv 
           ? `https://api.vidlink.pro/v1/tv/${tmdbId}`
           : `https://api.vidlink.pro/v1/movie/${tmdbId}`;
@@ -137,22 +137,23 @@ const MovieDetail: React.FC = () => {
             ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : `https://vidlink.pro/movie/${tmdbId}`;
         } else {
-          // 2. Fallback to a stable multi-source aggregator
+          // Step 2: Fallback to Server 2 (Vidsrc.to) - Preferred Aggregator
+          // Vidsrc.to is generally the most stable broad-source aggregator
           url = isTv
-            ? `https://vidsrc.net/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : imdbId 
-              ? `https://vidsrc.net/embed/movie/${imdbId}` 
-              : `https://vidsrc.net/embed/movie/${tmdbId}`;
+              ? `https://vidsrc.to/embed/movie/${imdbId}` 
+              : `https://vidsrc.to/embed/movie/${tmdbId}`;
         }
         
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 800));
       } catch (error) {
-        // 3. Ultimate Fallback
+        // Step 3: Final Fallback to Server 3 (Vidsrc.icu) 
         url = isTv
-          ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+          ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
           : imdbId 
-            ? `https://vidsrc.to/embed/movie/${imdbId}` 
-            : `https://vidsrc.to/embed/movie/${tmdbId}`;
+            ? `https://vidsrc.icu/embed/movie/${imdbId}` 
+            : `https://vidsrc.icu/embed/movie/${tmdbId}`;
       } finally {
         setIsChecking(false);
       }
@@ -545,12 +546,12 @@ const MovieDetail: React.FC = () => {
                         ) : (
                           <Zap className="w-5 h-5 fill-current" />
                         )}
-                        {isChecking ? "Analyzing servers..." : "Auto Select"}
+                        {isChecking ? "Optimizing servers..." : "Auto Select"}
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
                         {isChecking
-                          ? "Probing multiple sources for playability..."
-                          : "Smart aggregator with automatic source switching"}
+                          ? "Probing Server 1, 2, and 3 for the best stream..."
+                          : "Intelligently checks all sources to find working mirrors"}
                       </span>
                     </div>
                     {!isChecking && (
