@@ -121,12 +121,14 @@ const MovieDetail: React.FC = () => {
       url = isTv
         ? `https://vidlink.pro/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
         : `https://vidlink.pro/movie/${movie.id}`;
+    } else if (serverIndex === 1) {
+      url = isTv
+        ? `https://vidsrc.to/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.to/embed/movie/${movie.id}`;
     } else {
       url = isTv
-        ? `https://vidsrc.net/embed/tv?tmdb=${movie.id}&season=${selectedSeason}&episode=${selectedEpisode}`
-        : movie?.imdb_id
-          ? `https://vidsrc.net/embed/movie?imdb=${movie.imdb_id}`
-          : `https://vidsrc.net/embed/movie?tmdb=${movie?.id}`;
+        ? `https://vidsrc.icu/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.icu/embed/movie/${movie.id}`;
     }
     setPlayingUrl(url);
     setShowServerModal(false);
@@ -403,14 +405,24 @@ const MovieDetail: React.FC = () => {
                 title="Video Player"
                 className="w-full h-full border-0"
                 allowFullScreen
+                referrerPolicy="no-referrer"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               />
-              <button
-                onClick={() => setPlayingUrl(null)}
-                className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-all text-white z-50 border border-white/20 hover:scale-110 active:scale-95"
-              >
-                <Plus className="w-8 h-8 rotate-45" />
-              </button>
+              <div className="absolute top-6 right-6 flex items-center gap-4 z-50">
+                <button
+                  onClick={() => window.open(playingUrl, "_blank")}
+                  className="w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-all text-white border border-white/20 hover:scale-110 active:scale-95"
+                  title="Open in new tab"
+                >
+                  <ExternalLink className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={() => setPlayingUrl(null)}
+                  className="w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-all text-white border border-white/20 hover:scale-110 active:scale-95"
+                >
+                  <Plus className="w-8 h-8 rotate-45" />
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -545,7 +557,26 @@ const MovieDetail: React.FC = () => {
                         Server 2
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        High Quality
+                        High Quality • Source 1
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-colors">
+                      <Play className="w-5 h-5 fill-current ml-1 text-current opacity-50 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handlePlayOnServer(2)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-current/10 hover:border-current/20 hover:bg-current/5 transition-all text-left"
+                >
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg transition-colors group-hover:text-current">
+                        Server 3
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        Stable • Source 2
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-colors">
