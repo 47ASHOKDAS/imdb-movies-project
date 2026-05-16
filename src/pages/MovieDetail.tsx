@@ -3,6 +3,7 @@ import { useParams, Link, useLocation } from "react-router-dom";
 import {
   Play,
   Plus,
+  Zap,
   Check,
   Star,
   Calendar,
@@ -34,8 +35,7 @@ const MovieDetail: React.FC = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<number | "">(1);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
   const [showServerModal, setShowServerModal] = useState(false);
-  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
-
+  
   useEffect(() => {
     const loadMovie = async () => {
       if (!id) return;
@@ -117,20 +117,27 @@ const MovieDetail: React.FC = () => {
 
   const handlePlayOnServer = (serverIndex: number) => {
     let url = "";
+
     if (serverIndex === 0) {
       url = isTv
-        ? `https://vidlink.pro/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidlink.pro/movie/${movie.id}`;
+        ? `https://vidlink.pro/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidlink.pro/movie/${movie?.id}`;
     } else if (serverIndex === 1) {
       url = isTv
-        ? `https://vidsrc.to/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.to/embed/movie/${movie.id}`;
-    } else {
+        ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.to/embed/movie/${movie?.id}`;
+    } else if (serverIndex === 2) {
       url = isTv
-        ? `https://vidsrc.icu/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.icu/embed/movie/${movie.id}`;
+        ? `https://vidsrc.icu/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.icu/embed/movie/${movie?.id}`;
+    } else {
+      // Auto (Server 1 as default)
+      url = isTv
+        ? `https://vidlink.pro/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidlink.pro/movie/${movie?.id}`;
     }
-    setPlayingUrl(url);
+
+    window.open(url, "_blank");
     setShowServerModal(false);
   };
 
@@ -384,50 +391,6 @@ const MovieDetail: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Video Player Modal */}
-      <AnimatePresence>
-        {playingUrl && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center bg-black"
-          >
-            <div className="absolute inset-0 bg-black" />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative z-10 w-full h-full"
-            >
-              <iframe
-                src={playingUrl}
-                title="Video Player"
-                className="w-full h-full border-0"
-                allowFullScreen
-                referrerPolicy="no-referrer"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              />
-              <div className="absolute top-6 right-6 flex items-center gap-4 z-50">
-                <button
-                  onClick={() => window.open(playingUrl, "_blank")}
-                  className="w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-all text-white border border-white/20 hover:scale-110 active:scale-95"
-                  title="Open in new tab"
-                >
-                  <ExternalLink className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={() => setPlayingUrl(null)}
-                  className="w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-all text-white border border-white/20 hover:scale-110 active:scale-95"
-                >
-                  <Plus className="w-8 h-8 rotate-45" />
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Server Selection Modal */}
       <AnimatePresence>
         {showServerModal && (
@@ -528,6 +491,26 @@ const MovieDetail: React.FC = () => {
                 })()}
 
               <div className="space-y-4">
+                <button
+                  onClick={() => handlePlayOnServer(3)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-all text-left"
+                >
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg text-yellow-500 flex items-center gap-2">
+                        <Zap className="w-5 h-5 fill-current" />
+                        Auto Select
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        Automatically choose best server
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                      <Play className="w-5 h-5 text-yellow-500 fill-current ml-1" />
+                    </div>
+                  </div>
+                </button>
+
                 <button
                   onClick={() => handlePlayOnServer(0)}
                   className="w-full relative overflow-hidden group btn-glass p-0 border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left"
