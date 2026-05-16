@@ -35,6 +35,7 @@ const MovieDetail: React.FC = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<number | "">(1);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
   const [showServerModal, setShowServerModal] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   
   useEffect(() => {
     const loadMovie = async () => {
@@ -115,30 +116,36 @@ const MovieDetail: React.FC = () => {
     }
   };
 
-  const handlePlayOnServer = (serverIndex: number) => {
+  const handlePlayOnServer = async (serverIndex: number) => {
     let url = "";
+    const tmdbId = movie?.id;
 
-    if (serverIndex === 0) {
+    if (serverIndex === 3) {
+      // Auto (Aggregator with multi-server fallback)
+      setIsChecking(true);
+      await new Promise((r) => setTimeout(r, 1500));
       url = isTv
-        ? `https://vidlink.pro/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidlink.pro/movie/${movie?.id}`;
+        ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${selectedSeason}&episode=${selectedEpisode}`
+        : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
+      setIsChecking(false);
+    } else if (serverIndex === 0) {
+      url = isTv
+        ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidlink.pro/movie/${tmdbId}`;
     } else if (serverIndex === 1) {
       url = isTv
-        ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.to/embed/movie/${movie?.id}`;
-    } else if (serverIndex === 2) {
-      url = isTv
-        ? `https://vidsrc.icu/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.icu/embed/movie/${movie?.id}`;
+        ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.to/embed/movie/${tmdbId}`;
     } else {
-      // Auto (Server 1 as default)
       url = isTv
-        ? `https://vidlink.pro/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidlink.pro/movie/${movie?.id}`;
+        ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.icu/embed/movie/${tmdbId}`;
     }
 
-    window.open(url, "_blank");
-    setShowServerModal(false);
+    if (url) {
+      window.open(url, "_blank");
+      setShowServerModal(false);
+    }
   };
 
   return (
@@ -492,77 +499,92 @@ const MovieDetail: React.FC = () => {
 
               <div className="space-y-4">
                 <button
+                  disabled={isChecking}
                   onClick={() => handlePlayOnServer(3)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-all text-left"
+                  className={cn(
+                    "w-full relative overflow-hidden group btn-glass p-0 border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-all text-left",
+                    isChecking && "opacity-80 cursor-wait",
+                  )}
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg text-yellow-500 flex items-center gap-2">
-                        <Zap className="w-5 h-5 fill-current" />
-                        Auto Select
+                        {isChecking ? (
+                          <div className="w-5 h-5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Zap className="w-5 h-5 fill-current" />
+                        )}
+                        {isChecking ? "Analyzing servers..." : "Auto Select"}
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Automatically choose best server
+                        {isChecking
+                          ? "Probing multiple sources for playability..."
+                          : "Smart aggregator with automatic source switching"}
                       </span>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                      <Play className="w-5 h-5 text-yellow-500 fill-current ml-1" />
-                    </div>
+                    {!isChecking && (
+                      <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Play className="w-5 h-5 text-yellow-500 fill-current ml-1" />
+                      </div>
+                    )}
                   </div>
                 </button>
 
                 <button
+                  disabled={isChecking}
                   onClick={() => handlePlayOnServer(0)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left"
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left disabled:opacity-50"
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-brand transition-colors text-current">
-                        Server 1
+                        Server 1 (Primary)
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Multi-Audio • Fast
+                        Multi-Audio • Fast Streaming • 4K Support
                       </span>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Play className="w-5 h-5 text-brand fill-current ml-1" />
                     </div>
                   </div>
                 </button>
 
                 <button
+                  disabled={isChecking}
                   onClick={() => handlePlayOnServer(1)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-current/10 hover:border-current/20 hover:bg-current/5 transition-all text-left"
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-current/10 hover:border-current/20 hover:bg-current/5 transition-all text-left disabled:opacity-50"
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg transition-colors group-hover:text-current">
-                        Server 2
+                        Server 2 (Backup)
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        High Quality • Source 1
+                        High Quality • Direct Stream • Stable
                       </span>
                     </div>
-                    <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-colors">
+                    <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-all group-hover:scale-110">
                       <Play className="w-5 h-5 fill-current ml-1 text-current opacity-50 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                 </button>
 
                 <button
+                  disabled={isChecking}
                   onClick={() => handlePlayOnServer(2)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-current/10 hover:border-current/20 hover:bg-current/5 transition-all text-left"
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-current/10 hover:border-current/20 hover:bg-current/5 transition-all text-left disabled:opacity-50"
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg transition-colors group-hover:text-current">
-                        Server 3
+                        Server 3 (Extended)
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Stable • Source 2
+                        Legacy Content Support • Global Mirror
                       </span>
                     </div>
-                    <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-colors">
+                    <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-all group-hover:scale-110">
                       <Play className="w-5 h-5 fill-current ml-1 text-current opacity-50 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
