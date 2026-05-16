@@ -119,15 +119,37 @@ const MovieDetail: React.FC = () => {
   const handlePlayOnServer = async (serverIndex: number) => {
     let url = "";
     const tmdbId = movie?.id;
+    const imdbId = movie?.imdb_id;
 
     if (serverIndex === 3) {
-      // Auto (Aggregator with multi-server fallback)
+      // Auto (Smart Selection)
       setIsChecking(true);
-      await new Promise((r) => setTimeout(r, 1500));
-      url = isTv
-        ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${selectedSeason}&episode=${selectedEpisode}`
-        : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
-      setIsChecking(false);
+      
+      try {
+        // Try to verify if vidlink has it
+        const checkUrl = isTv 
+          ? `https://api.vidlink.pro/v1/tv/${tmdbId}`
+          : `https://api.vidlink.pro/v1/movie/${tmdbId}`;
+          
+        const res = await fetch(checkUrl).then(r => r.json()).catch(() => null);
+        
+        if (res && (res.data || res.success)) {
+          url = isTv
+            ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            : `https://vidlink.pro/movie/${tmdbId}`;
+        } else {
+          // Fallback to Vidsrc.cc (aggregator)
+          url = isTv
+            ? `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            : `https://vidsrc.cc/v2/embed/movie/${tmdbId}`;
+        }
+      } catch (error) {
+        url = isTv
+          ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+          : `https://vidsrc.to/embed/movie/${tmdbId}`;
+      } finally {
+        setIsChecking(false);
+      }
     } else if (serverIndex === 0) {
       url = isTv
         ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
@@ -135,15 +157,18 @@ const MovieDetail: React.FC = () => {
     } else if (serverIndex === 1) {
       url = isTv
         ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.to/embed/movie/${tmdbId}`;
+        : imdbId ? `https://vidsrc.to/embed/movie/${imdbId}` : `https://vidsrc.to/embed/movie/${tmdbId}`;
     } else {
       url = isTv
         ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.icu/embed/movie/${tmdbId}`;
+        : imdbId ? `https://vidsrc.icu/embed/movie/${imdbId}` : `https://vidsrc.icu/embed/movie/${tmdbId}`;
     }
 
     if (url) {
-      window.open(url, "_blank");
+      const newWindow = window.open(url, "_blank");
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        alert("Popup blocked! Please allow popups to watch the movie.");
+      }
       setShowServerModal(false);
     }
   };
