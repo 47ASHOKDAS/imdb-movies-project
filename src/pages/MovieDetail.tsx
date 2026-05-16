@@ -122,33 +122,38 @@ const MovieDetail: React.FC = () => {
     const imdbId = movie?.imdb_id;
 
     if (serverIndex === 3) {
-      // Auto (Smart Aggregator with multi-server fallback)
+      // Auto Select Logic
       setIsChecking(true);
       try {
-        // Try Vidlink API first as it's the most reliable for checking existence
-        const checkUrl = isTv 
+        // 1. Check Server 1 (Vidlink) via API
+        const vidlinkApi = isTv 
           ? `https://api.vidlink.pro/v1/tv/${tmdbId}`
           : `https://api.vidlink.pro/v1/movie/${tmdbId}`;
           
-        const vidlinkRes = await fetch(checkUrl).then(r => r.json()).catch(() => null);
+        const res = await fetch(vidlinkApi).then(r => r.json()).catch(() => null);
         
-        if (vidlinkRes && (vidlinkRes.success || vidlinkRes.data)) {
+        if (res && (res.success || res.data)) {
           url = isTv
             ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : `https://vidlink.pro/movie/${tmdbId}`;
         } else {
-          // If Vidlink doesn't have it, use vidsrc.net which is a stable fallback aggregator
+          // 2. If Server 1 is missing, use Server 2 (Vidsrc.to) with IMDB ID for better stability
+          // Most movies work better with IMDB IDs on Vidsrc
           url = isTv
-            ? `https://vidsrc.net/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-            : `https://vidsrc.net/embed/movie/${tmdbId}`;
+            ? `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            : imdbId 
+              ? `https://vidsrc.cc/v2/embed/movie/${imdbId}` 
+              : `https://vidsrc.to/embed/movie/${tmdbId}`;
         }
         
-        await new Promise((r) => setTimeout(r, 800));
+        await new Promise((r) => setTimeout(r, 700));
       } catch (error) {
-        // Final fallback to vidsrc.to
+        // 3. Ultimate Fallback
         url = isTv
           ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-          : `https://vidsrc.to/embed/movie/${tmdbId}`;
+          : imdbId 
+            ? `https://vidsrc.to/embed/movie/${imdbId}` 
+            : `https://vidsrc.to/embed/movie/${tmdbId}`;
       } finally {
         setIsChecking(false);
       }
