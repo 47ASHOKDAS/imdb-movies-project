@@ -125,16 +125,27 @@ const MovieDetail: React.FC = () => {
       // Auto (Smart Aggregator with multi-server fallback)
       setIsChecking(true);
       try {
-        // We'll use vidsrc.xyz as it's a very stable aggregator that includes its own server switching
-        url = isTv
-          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${selectedSeason}&episode=${selectedEpisode}`
-          : imdbId 
-            ? `https://vidsrc.xyz/embed/movie?imdb=${imdbId}` 
-            : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
+        // Try Vidlink API first as it's the most reliable for checking existence
+        const checkUrl = isTv 
+          ? `https://api.vidlink.pro/v1/tv/${tmdbId}`
+          : `https://api.vidlink.pro/v1/movie/${tmdbId}`;
+          
+        const vidlinkRes = await fetch(checkUrl).then(r => r.json()).catch(() => null);
         
-        // Simulating a slightly longer check for UX "feeling" of intelligence
+        if (vidlinkRes && (vidlinkRes.success || vidlinkRes.data)) {
+          url = isTv
+            ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            : `https://vidlink.pro/movie/${tmdbId}`;
+        } else {
+          // If Vidlink doesn't have it, use vidsrc.net which is a stable fallback aggregator
+          url = isTv
+            ? `https://vidsrc.net/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            : `https://vidsrc.net/embed/movie/${tmdbId}`;
+        }
+        
         await new Promise((r) => setTimeout(r, 800));
       } catch (error) {
+        // Final fallback to vidsrc.to
         url = isTv
           ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
           : `https://vidsrc.to/embed/movie/${tmdbId}`;
