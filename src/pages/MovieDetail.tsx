@@ -137,16 +137,15 @@ const MovieDetail: React.FC = () => {
             ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : `https://vidlink.pro/movie/${tmdbId}`;
         } else {
-          // 2. If Server 1 is missing, use Server 2 (Vidsrc.to) with IMDB ID for better stability
-          // Most movies work better with IMDB IDs on Vidsrc
+          // 2. Fallback to a stable multi-source aggregator
           url = isTv
-            ? `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            ? `https://vidsrc.net/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : imdbId 
-              ? `https://vidsrc.cc/v2/embed/movie/${imdbId}` 
-              : `https://vidsrc.to/embed/movie/${tmdbId}`;
+              ? `https://vidsrc.net/embed/movie/${imdbId}` 
+              : `https://vidsrc.net/embed/movie/${tmdbId}`;
         }
         
-        await new Promise((r) => setTimeout(r, 700));
+        await new Promise((r) => setTimeout(r, 600));
       } catch (error) {
         // 3. Ultimate Fallback
         url = isTv
