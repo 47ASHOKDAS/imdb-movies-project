@@ -34,6 +34,7 @@ const MovieDetail: React.FC = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<number | "">(1);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
   const [showServerModal, setShowServerModal] = useState(false);
+  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadMovie = async () => {
@@ -127,7 +128,7 @@ const MovieDetail: React.FC = () => {
           ? `https://vidsrc.net/embed/movie?imdb=${movie.imdb_id}`
           : `https://vidsrc.net/embed/movie?tmdb=${movie?.id}`;
     }
-    window.open(url, "_blank");
+    setPlayingUrl(url);
     setShowServerModal(false);
   };
 
@@ -373,6 +374,40 @@ const MovieDetail: React.FC = () => {
               <button
                 onClick={() => setShowTrailer(false)}
                 className="absolute top-6 right-6 w-12 h-12 bg-current/10 hover:bg-current/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors text-white"
+              >
+                <Plus className="w-8 h-8 rotate-45" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Video Player Modal */}
+      <AnimatePresence>
+        {playingUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black"
+          >
+            <div className="absolute inset-0 bg-black" />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative z-10 w-full h-full"
+            >
+              <iframe
+                src={playingUrl}
+                title="Video Player"
+                className="w-full h-full border-0"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              />
+              <button
+                onClick={() => setPlayingUrl(null)}
+                className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-all text-white z-50 border border-white/20 hover:scale-110 active:scale-95"
               >
                 <Plus className="w-8 h-8 rotate-45" />
               </button>
