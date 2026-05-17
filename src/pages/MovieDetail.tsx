@@ -569,11 +569,12 @@ const MovieDetail: React.FC = () => {
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="font-bold text-lg group-hover:text-brand transition-colors text-current">
+                      <span className="font-bold text-lg group-hover:text-brand transition-colors text-current flex items-center gap-2">
                         Server 1 (Primary)
+                        <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Multi-Audio</span>
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Multi-Audio • Fast Streaming • 4K Support
+                        Best choice for multiple languages • 4K Support
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
