@@ -35,7 +35,6 @@ const MovieDetail: React.FC = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<number | "">(1);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
   const [showServerModal, setShowServerModal] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
   
   // Progress Syncing Implementation
   useEffect(() => {
@@ -143,74 +142,26 @@ const MovieDetail: React.FC = () => {
     }
   };
 
-  const handlePlayOnServer = async (serverIndex: number) => {
+  const handlePlayOnServer = (serverIndex: number) => {
     let url = "";
     const tmdbId = movie?.id;
     const imdbId = movie?.imdb_id;
 
-    if (serverIndex === 3) {
-      // Auto Select Logic: Iterative Discovery
-      setIsChecking(true);
-      try {
-        // Step 1: Check Vidlink (Server 1) via their status API
-        const vidlinkApi = isTv 
-          ? `https://api.vidlink.pro/v1/tv/${tmdbId}`
-          : `https://api.vidlink.pro/v1/movie/${tmdbId}`;
-          
-        const res = await fetch(vidlinkApi).then(r => r.json()).catch(() => null);
-        
-        if (res && (res.success || res.data)) {
-          url = isTv
-            ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-            : `https://vidlink.pro/movie/${tmdbId}`;
-        } else {
-          // Step 2: Fallback to Vidsrc.xyz (Highly Stable Mirror)
-          url = isTv
-            ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-            : `https://vidsrc.xyz/embed/movie/${tmdbId}`;
-        }
-        
-        await new Promise((r) => setTimeout(r, 600));
-      } catch (error) {
-        // Step 3: Reliable fallback (Vidsrc.ru for Progress Syncing)
-        url = isTv
-          ? `https://vidsrc.ru/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}?autoplay=true`
-          : `https://vidsrc.ru/movie/${tmdbId}?autoplay=true`;
-      } finally {
-        setIsChecking(false);
-      }
-    } else if (serverIndex === 0) {
+    if (serverIndex === 0) {
+      // Server 1: Vidlink (Fast & Modern)
       url = isTv
         ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
         : `https://vidlink.pro/movie/${tmdbId}`;
-    } else if (serverIndex === 6) {
-      // Vidsrc.xyz (Stability King)
+    } else if (serverIndex === 1) {
+      // Server 2: Vidsrc.xyz (Stable)
       url = isTv
         ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
         : `https://vidsrc.xyz/embed/movie/${tmdbId}`;
-    } else if (serverIndex === 7) {
-      // AutoEmbed (Global)
-      url = isTv
-        ? `https://autoembed.cc/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://autoembed.cc/embed/movie/${tmdbId}`;
-    } else if (serverIndex === 1) {
-      url = isTv
-        ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : imdbId ? `https://vidsrc.to/embed/movie/${imdbId}` : `https://vidsrc.to/embed/movie/${tmdbId}`;
-    } else if (serverIndex === 4) {
-      // Corrected SmashyStream URL (Query-based pattern for reliability)
-      url = isTv
-        ? `https://embed.smashystream.com/play/tv?tmdb=${tmdbId}&season=${selectedSeason}&episode=${selectedEpisode}`
-        : `https://embed.smashystream.com/play/movie?tmdb=${tmdbId}`;
-    } else if (serverIndex === 5) {
-      // New: Vidsrc.ru (Fast Internal Player)
+    } else if (serverIndex === 2) {
+      // Server 3: Vidsrc.ru (Speed + Progress Sync)
       url = isTv
         ? `https://vidsrc.ru/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}?autoplay=true`
         : `https://vidsrc.ru/movie/${tmdbId}?autoplay=true`;
-    } else {
-      url = isTv
-        ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : imdbId ? `https://vidsrc.icu/embed/movie/${imdbId}` : `https://vidsrc.icu/embed/movie/${tmdbId}`;
     }
 
     if (url) {
@@ -573,91 +524,17 @@ const MovieDetail: React.FC = () => {
 
               <div className="space-y-4">
                 <button
-                  disabled={isChecking}
-                  onClick={() => handlePlayOnServer(3)}
-                  className={cn(
-                    "w-full relative overflow-hidden group btn-glass p-0 border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-all text-left",
-                    isChecking && "opacity-80 cursor-wait",
-                  )}
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg text-yellow-500 flex items-center gap-2">
-                        {isChecking ? (
-                          <div className="w-5 h-5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Zap className="w-5 h-5 fill-current" />
-                        )}
-                        {isChecking ? "Optimizing servers..." : "Auto Select"}
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        {isChecking
-                          ? "Probing Server 1, 6, and 5 for the best stream..."
-                          : "Intelligently checks all sources to find working mirrors"}
-                      </span>
-                    </div>
-                    {!isChecking && (
-                      <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Play className="w-5 h-5 text-yellow-500 fill-current ml-1" />
-                      </div>
-                    )}
-                  </div>
-                </button>
-
-                <button
-                  disabled={isChecking}
-                  onClick={() => handlePlayOnServer(6)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-left disabled:opacity-50"
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg group-hover:text-emerald-400 transition-colors text-current flex items-center gap-2">
-                        Server 6 (Most Stable)
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Reliable</span>
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        Best uptime in 2025 • Minimal buffering
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Play className="w-5 h-5 text-emerald-400 fill-current ml-1" />
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  disabled={isChecking}
-                  onClick={() => handlePlayOnServer(7)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10 transition-all text-left disabled:opacity-50"
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg group-hover:text-orange-400 transition-colors text-current flex items-center gap-2">
-                        Server 7 (Global)
-                        <span className="text-[10px] bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Fast Loading</span>
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        Optimized for global edge locations
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Play className="w-5 h-5 text-orange-400 fill-current ml-1" />
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  disabled={isChecking}
                   onClick={() => handlePlayOnServer(0)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left disabled:opacity-50"
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left"
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-brand transition-colors text-current flex items-center gap-2">
-                        Server 1 (High Quality)
+                        Server 1 (Primary)
+                        <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Fast</span>
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Fast Streaming • 4K Support • Modern Player
+                        Modern player • High Quality • Reliable
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -667,83 +544,41 @@ const MovieDetail: React.FC = () => {
                 </button>
 
                 <button
-                  disabled={isChecking}
-                  onClick={() => handlePlayOnServer(5)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-sky-400/30 bg-sky-400/5 hover:bg-sky-400/10 transition-all text-left disabled:opacity-50"
+                  onClick={() => handlePlayOnServer(1)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-left"
+                >
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg group-hover:text-emerald-400 transition-colors text-current flex items-center gap-2">
+                        Server 2 (Stable)
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Recommended</span>
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        Best uptime • Stable streaming
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 text-emerald-400 fill-current ml-1" />
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handlePlayOnServer(2)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-sky-400/30 bg-sky-400/5 hover:bg-sky-400/10 transition-all text-left"
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-sky-400 transition-colors text-current flex items-center gap-2">
-                        Server 5 (Speed)
-                        <span className="text-[10px] bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Faster</span>
+                        Server 3 (Speed)
+                        <span className="text-[10px] bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Progress Sync</span>
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Optimized for low latency • Progress Syncing
+                        Fastest loading • Syncs watch progress
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-sky-400/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Play className="w-5 h-5 text-sky-400 fill-current ml-1" />
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  disabled={isChecking}
-                  onClick={() => handlePlayOnServer(4)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 transition-all text-left disabled:opacity-50"
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg group-hover:text-purple-400 transition-colors text-current flex items-center gap-2">
-                        Server 4 (Multi-Audio)
-                        <span className="text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Dual Audio</span>
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        Experimental • Supports Hindi/English/Dual tracks
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Play className="w-5 h-5 text-purple-400 fill-current ml-1" />
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  disabled={isChecking}
-                  onClick={() => handlePlayOnServer(1)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-current/10 hover:border-current/20 hover:bg-current/5 transition-all text-left disabled:opacity-50"
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg transition-colors group-hover:text-current">
-                        Server 2 (Backup)
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        High Quality • Direct Stream • Stable
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-all group-hover:scale-110">
-                      <Play className="w-5 h-5 fill-current ml-1 text-current opacity-50 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  disabled={isChecking}
-                  onClick={() => handlePlayOnServer(2)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-current/10 hover:border-current/20 hover:bg-current/5 transition-all text-left disabled:opacity-50"
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg transition-colors group-hover:text-current">
-                        Server 3 (Extended)
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        Legacy Content Support • Global Mirror
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center group-hover:border-current transition-all group-hover:scale-110">
-                      <Play className="w-5 h-5 fill-current ml-1 text-current opacity-50 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                 </button>
