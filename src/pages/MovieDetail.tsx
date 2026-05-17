@@ -137,15 +137,15 @@ const MovieDetail: React.FC = () => {
             ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : `https://vidlink.pro/movie/${tmdbId}`;
         } else {
-          // Step 2: Fallback to SmashyStream (known for multi-audio mirrors)
+          // Step 2: Fallback to SmashyStream (correct path)
           url = isTv
-            ? `https://embed.smashystream.com/play/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-            : `https://embed.smashystream.com/play/movie/${tmdbId}`;
+            ? `https://embed.smashystream.com/play/tmdb/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            : `https://embed.smashystream.com/play/tmdb/movie/${tmdbId}`;
         }
         
         await new Promise((r) => setTimeout(r, 800));
       } catch (error) {
-        // Step 3: Reliable fallback
+        // Step 3: Reliable fallback (Vidsrc.to)
         url = isTv
           ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
           : imdbId 
@@ -163,10 +163,10 @@ const MovieDetail: React.FC = () => {
         ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
         : imdbId ? `https://vidsrc.to/embed/movie/${imdbId}` : `https://vidsrc.to/embed/movie/${tmdbId}`;
     } else if (serverIndex === 4) {
-      // New: SmashyStream (Experimental Multi-Audio)
+      // Corrected SmashyStream URL (tmdb prefix required)
       url = isTv
-        ? `https://embed.smashystream.com/play/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://embed.smashystream.com/play/movie/${tmdbId}`;
+        ? `https://embed.smashystream.com/play/tmdb/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://embed.smashystream.com/play/tmdb/movie/${tmdbId}`;
     } else {
       url = isTv
         ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
