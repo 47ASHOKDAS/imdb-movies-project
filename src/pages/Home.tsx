@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { tmdbService } from "../services/tmdb";
 import { Movie } from "../types";
 import MovieCard from "../components/movies/MovieCard";
-import { MovieGridSkeleton } from "../components/ui/Skeleton";
+import { MovieGridSkeleton, Skeleton } from "../components/ui/Skeleton";
 import SEO from "../components/common/SEO";
 import ErrorMessage from "../components/common/ErrorMessage";
 import { GENRES, PROVIDERS } from "../components/layout/Sidebar";
@@ -145,22 +145,17 @@ const Home = ({ type = "movie" }: HomeProps) => {
     return () => observer.disconnect();
   }, [loadMore, hasMore, loading, loadingMore]);
 
-  if (loading && genreMovies.length === 0) {
-    return (
-      <div className="pt-20 bg-obsidian min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-brand animate-spin" />
-      </div>
-    );
-  }
 
   const Section = ({
     title,
     movies,
     slug,
+    isLoading,
   }: {
     title: string;
     movies: Movie[];
     slug: string;
+    isLoading?: boolean;
   }) => {
     return (
       <div className="mb-16">
@@ -171,7 +166,7 @@ const Home = ({ type = "movie" }: HomeProps) => {
               {title}
             </h2>
           </div>
-          {movies.length > 0 && (
+          {!isLoading && movies.length > 0 && (
             <Link
               to={`/category/${type}/${slug}`}
               className="text-sm font-semibold tracking-wide text-brand hover:text-brand/80 transition-colors"
@@ -180,11 +175,24 @@ const Home = ({ type = "movie" }: HomeProps) => {
             </Link>
           )}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
-          {movies.slice(0, 10).map((movie: Movie) => (
-            <MovieCard key={movie.id} movie={movie} />
-          ))}
-        </div>
+        
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-3">
+                <Skeleton className="aspect-[2/3] w-full rounded-xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
+            {movies.slice(0, 10).map((movie: Movie) => (
+              <MovieCard key={movie.id} movie={movie} />
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -258,11 +266,11 @@ const Home = ({ type = "movie" }: HomeProps) => {
               </div>
             </div>
 
-            <Section title="Trending Now" movies={trending} slug="trending" />
+            <Section title="Trending Now" movies={trending} slug="trending" isLoading={loading} />
 
-            <Section title="Bollywood" movies={bollywood} slug="bollywood" />
+            <Section title="Bollywood" movies={bollywood} slug="bollywood" isLoading={loading} />
 
-            <Section title="Hollywood" movies={hollywood} slug="hollywood" />
+            <Section title="Hollywood" movies={hollywood} slug="hollywood" isLoading={loading} />
           </div>
         ) : (
           <div className="pt-32 px-8 md:px-12 pb-20">
@@ -323,11 +331,15 @@ const Home = ({ type = "movie" }: HomeProps) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
-              {genreMovies.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
-              ))}
-            </div>
+            {loading ? (
+              <MovieGridSkeleton count={10} />
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8">
+                {genreMovies.map((movie) => (
+                  <MovieCard key={movie.id} movie={movie} />
+                ))}
+              </div>
+            )}
 
             {/* Loading Trigger for Infinite Scroll */}
             {hasMore && (

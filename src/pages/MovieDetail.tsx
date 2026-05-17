@@ -14,6 +14,7 @@ import {
   Share2,
   ShieldCheck,
   Activity,
+  Heart,
 } from "lucide-react";
 import { MovieDetails, OMDBData, Movie } from "../types";
 import { tmdbService } from "../services/tmdb";
@@ -41,6 +42,10 @@ const MovieDetail: React.FC = () => {
   const [showPlayer, setShowPlayer] = useState(false);
   const [activeUrl, setActiveUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [preferredServer, setPreferredServer] = useState<number | null>(() => {
+    const saved = localStorage.getItem("preferred_server");
+    return saved !== null ? parseInt(saved, 10) : null;
+  });
   
   // Progress Syncing Implementation
   useEffect(() => {
@@ -185,6 +190,17 @@ const MovieDetail: React.FC = () => {
       setActiveUrl(url);
       setShowPlayer(true);
       setShowServerModal(false);
+    }
+  };
+
+  const handleSetPreferred = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newPreference = preferredServer === index ? null : index;
+    setPreferredServer(newPreference);
+    if (newPreference !== null) {
+      localStorage.setItem("preferred_server", newPreference.toString());
+    } else {
+      localStorage.removeItem("preferred_server");
     }
   };
 
@@ -589,68 +605,112 @@ const MovieDetail: React.FC = () => {
                 })()}
 
               <div className="space-y-4">
-                <button
-                  onClick={() => handlePlayOnServer(0)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left"
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg group-hover:text-brand transition-colors text-current flex items-center gap-2">
-                        <Zap className="w-5 h-5 fill-current" />
-                        Server 1 (Primary)
-                        <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Fast</span>
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        Modern player • High Quality • Fast Streaming
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Play className="w-5 h-5 text-brand fill-current ml-1" />
-                    </div>
-                  </div>
-                </button>
+                {[
+                  {
+                    id: 0,
+                    name: "Server 1 (Primary)",
+                    desc: "Modern player • High Quality • Fast Streaming",
+                    tag: "Fast",
+                    icon: <Zap className="w-5 h-5 fill-current" />,
+                    colorClass: "brand",
+                  },
+                  {
+                    id: 1,
+                    name: "Server 2 (Stable)",
+                    desc: "Best uptime • Stable streaming",
+                    tag: "Recommended",
+                    icon: <ShieldCheck className="w-5 h-5 fill-current" />,
+                    colorClass: "emerald-500",
+                  },
+                  {
+                    id: 2,
+                    name: "Server 3 (Fallback)",
+                    desc: "Stable alternative mirror if others fail",
+                    tag: "Reliable",
+                    icon: <Activity className="w-5 h-5" />,
+                    colorClass: "sky-400",
+                  },
+                ].map((server) => {
+                  const isPreferred = preferredServer === server.id;
+                  const colorMap: Record<string, string> = {
+                    'brand': 'border-brand bg-brand/10 text-brand',
+                    'emerald-500': 'border-emerald-500 bg-emerald-500/10 text-emerald-400',
+                    'sky-400': 'border-sky-400 bg-sky-400/10 text-sky-400',
+                  };
+                  const hoverColorMap: Record<string, string> = {
+                    'brand': 'group-hover:text-brand',
+                    'emerald-500': 'group-hover:text-emerald-400',
+                    'sky-400': 'group-hover:text-sky-400',
+                  };
+                  const tagColorMap: Record<string, string> = {
+                    'brand': 'bg-brand/20 text-brand',
+                    'emerald-500': 'bg-emerald-500/20 text-emerald-400',
+                    'sky-400': 'bg-sky-400/20 text-sky-400',
+                  };
+                  const iconColorMap: Record<string, string> = {
+                    'brand': 'text-brand',
+                    'emerald-500': 'text-emerald-400',
+                    'sky-400': 'text-sky-400',
+                  };
 
-                <button
-                  onClick={() => handlePlayOnServer(1)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-left"
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg group-hover:text-emerald-400 transition-colors text-current flex items-center gap-2">
-                        <ShieldCheck className="w-5 h-5 fill-current" />
-                        Server 2 (Stable)
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Recommended</span>
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        Best uptime • Stable streaming
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Play className="w-5 h-5 text-emerald-400 fill-current ml-1" />
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => handlePlayOnServer(2)}
-                  className="w-full relative overflow-hidden group btn-glass p-0 border border-sky-400/30 bg-sky-400/5 hover:bg-sky-400/10 transition-all text-left"
-                >
-                  <div className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg group-hover:text-sky-400 transition-colors text-current flex items-center gap-2">
-                        <Activity className="w-5 h-5" />
-                        Server 3 (Fallback)
-                        <span className="text-[10px] bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Reliable</span>
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        Stable alternative mirror if others fail
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-sky-400/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Play className="w-5 h-5 text-sky-400 fill-current ml-1" />
-                    </div>
-                  </div>
-                </button>
+                  return (
+                    <button
+                      key={server.id}
+                      onClick={() => handlePlayOnServer(server.id)}
+                      className={cn(
+                        "w-full relative overflow-hidden group btn-glass p-0 border transition-all text-left",
+                        isPreferred 
+                          ? colorMap[server.colorClass]
+                          : "border-current/10 hover:border-current/20 hover:bg-current/5"
+                      )}
+                    >
+                      <div className="px-6 py-4 flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className={cn(
+                            "font-bold text-lg transition-colors text-current flex items-center gap-2",
+                            hoverColorMap[server.colorClass]
+                          )}>
+                            {server.icon}
+                            {server.name}
+                            {isPreferred && (
+                              <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded uppercase tracking-tighter flex items-center gap-1">
+                                <Heart className="w-2.5 h-2.5 fill-current" />
+                                Preferred
+                              </span>
+                            )}
+                            <span className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded uppercase tracking-tighter",
+                              tagColorMap[server.colorClass]
+                            )}>
+                              {server.tag}
+                            </span>
+                          </span>
+                          <span className="text-xs font-medium text-zinc-400">
+                            {server.desc}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={(e) => handleSetPreferred(server.id, e)}
+                            className={cn(
+                              "w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 bg-current/5 hover:bg-current/10",
+                              isPreferred ? "text-red-500 bg-red-500/10" : "text-zinc-500"
+                            )}
+                            title={isPreferred ? "Remove from preferred" : "Set as preferred"}
+                          >
+                            <Heart className={cn("w-5 h-5", isPreferred && "fill-current")} />
+                          </button>
+                          <div className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform",
+                            isPreferred ? "" : "bg-current/10"
+                          )}>
+                            <Play className={cn("w-5 h-5 fill-current ml-1", iconColorMap[server.colorClass])} />
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </motion.div>
           </motion.div>
