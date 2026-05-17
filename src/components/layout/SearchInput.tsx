@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Search, X, Loader2, Sparkles, TrendingUp } from "lucide-react";
+import { Search, X, Loader2, Sparkles, TrendingUp, Star, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { tmdbService } from "../../services/tmdb";
 import { Movie } from "../../types";
@@ -169,16 +169,21 @@ const SearchInput: React.FC = () => {
                         </div>
                         <div className="flex-grow min-w-0">
                           <h4 className="text-sm font-bold text-current truncate group-hover:text-brand transition-colors tracking-tight">
-                            {movie.title}
+                            {movie.title || movie.name}
                           </h4>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs text-zinc-500 font-bold">
-                              {movie.release_date?.split("-")[0]}
+                            <span className="text-[10px] bg-current/10 px-1.5 py-0.5 rounded text-zinc-500 uppercase font-black tracking-tighter">
+                              {movie.media_type === 'tv' ? 'TV' : 'Movie'}
                             </span>
+                            {(movie.release_date || movie.first_air_date) && (
+                              <span className="text-xs text-zinc-500 font-bold">
+                                {(movie.release_date || movie.first_air_date)?.split("-")[0]}
+                              </span>
+                            )}
                             <div className="flex items-center gap-1">
-                              <TrendingUp className="w-3 h-3 text-brand" />
+                              <Star className="w-3 h-3 text-yellow-500 fill-current" />
                               <span className="text-[10px] font-black text-zinc-400">
-                                {movie.vote_average.toFixed(1)}
+                                {movie.vote_average?.toFixed(1)}
                               </span>
                             </div>
                           </div>
@@ -193,13 +198,15 @@ const SearchInput: React.FC = () => {
                   )}
             </div>
 
-            {query.trim() && (
-              <div className="mt-4 pt-4 border-t border-current/10 px-4">
+            {query.trim().length >= 2 && (
+              <div className="mt-4 pt-4 border-t border-current/10 px-2">
                 <button
                   onClick={handleSearchSubmit}
-                  className="w-full text-center text-[10px] font-black tracking-[0.2em] text-zinc-500 hover:text-brand transition-colors uppercase py-2"
+                  className="w-full flex items-center justify-center gap-3 py-3 bg-brand text-white rounded-2xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-brand/20 group cursor-pointer"
                 >
-                  Press Enter for all results
+                  <Search className="w-4 h-4" />
+                  <span className="text-xs uppercase tracking-[0.1em]">View All Results</span>
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             )}

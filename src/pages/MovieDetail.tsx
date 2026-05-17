@@ -12,6 +12,8 @@ import {
   ExternalLink,
   AlertCircle,
   Share2,
+  ShieldCheck,
+  Activity,
 } from "lucide-react";
 import { MovieDetails, OMDBData, Movie } from "../types";
 import { tmdbService } from "../services/tmdb";
@@ -594,6 +596,7 @@ const MovieDetail: React.FC = () => {
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-brand transition-colors text-current flex items-center gap-2">
+                        <Zap className="w-5 h-5 fill-current" />
                         Server 1 (Primary)
                         <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Fast</span>
                       </span>
@@ -614,6 +617,7 @@ const MovieDetail: React.FC = () => {
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-emerald-400 transition-colors text-current flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 fill-current" />
                         Server 2 (Stable)
                         <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Recommended</span>
                       </span>
@@ -634,6 +638,7 @@ const MovieDetail: React.FC = () => {
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-sky-400 transition-colors text-current flex items-center gap-2">
+                        <Activity className="w-5 h-5" />
                         Server 3 (Fallback)
                         <span className="text-[10px] bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Reliable</span>
                       </span>
