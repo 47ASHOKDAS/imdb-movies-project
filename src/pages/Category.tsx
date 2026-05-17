@@ -4,6 +4,7 @@ import { tmdbService } from "../services/tmdb";
 import { Movie } from "../types";
 import MovieCard from "../components/movies/MovieCard";
 import { Loader2, ArrowLeft } from "lucide-react";
+import { MovieGridSkeleton } from "../components/ui/Skeleton";
 import SEO from "../components/common/SEO";
 import ErrorMessage from "../components/common/ErrorMessage";
 
@@ -36,7 +37,7 @@ const Category = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMovies = async (pageNum: number) => {
+  const fetchMovies = useCallback(async (pageNum: number) => {
     switch (slug) {
       case "trending":
         return await tmdbService.getTrending(type, pageNum);
@@ -51,9 +52,9 @@ const Category = () => {
       default:
         return await tmdbService.getTrending(type, pageNum);
     }
-  };
+  }, [type, slug]);
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
     setMovies([]);
@@ -69,20 +70,26 @@ const Category = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchMovies]);
 
   useEffect(() => {
     fetchInitialData();
     window.scrollTo(0, 0);
-  }, [type, slug]);
+  }, [fetchInitialData]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore || loading) return;
 
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
       const res = await fetchMovies(nextPage);
+      
+      if (res.results.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
       setMovies((prev) => {
         const existingIds = new Set(prev.map((m) => m.id));
         const newMovies = res.results.filter((m) => !existingIds.has(m.id));
@@ -95,7 +102,7 @@ const Category = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, page, type, slug]);
+  }, [loadingMore, hasMore, loading, page, fetchMovies]);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -121,8 +128,17 @@ const Category = () => {
 
   if (loading && movies.length === 0) {
     return (
-      <div className="pt-20 bg-obsidian min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-brand animate-spin" />
+      <div className="bg-transparent min-h-screen text-current pt-24 pb-20 px-6 md:px-12">
+        <div className="max-w-[1600px] mx-auto">
+          <div className="flex items-center gap-6 mb-10">
+            <div className="w-10 h-10 rounded-full border border-current/10 animate-pulse bg-current/5" />
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-10 bg-brand/50 rounded-full animate-pulse" />
+              <div className="h-10 w-48 bg-current/5 rounded-lg animate-pulse" />
+            </div>
+          </div>
+          <MovieGridSkeleton count={12} />
+        </div>
       </div>
     );
   }
@@ -166,9 +182,11 @@ const Category = () => {
         </div>
 
         {hasMore && (
-          <div ref={loadMoreRef} className="py-20 flex justify-center w-full">
+          <div ref={loadMoreRef} className="py-20 w-full">
             {loadingMore && (
-              <Loader2 className="w-10 h-10 text-brand animate-spin" />
+              <div className="mt-8">
+                <MovieGridSkeleton count={6} />
+              </div>
             )}
           </div>
         )}
