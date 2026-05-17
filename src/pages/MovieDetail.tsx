@@ -164,20 +164,18 @@ const MovieDetail: React.FC = () => {
             ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : `https://vidlink.pro/movie/${tmdbId}`;
         } else {
-          // Step 2: Fallback to Vidsrc.ru (New High-Performance Server)
+          // Step 2: Fallback to Vidsrc.xyz (Highly Stable Mirror)
           url = isTv
-            ? `https://vidsrc.ru/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}?autoplay=true`
-            : `https://vidsrc.ru/movie/${tmdbId}?autoplay=true`;
+            ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            : `https://vidsrc.xyz/embed/movie/${tmdbId}`;
         }
         
-        await new Promise((r) => setTimeout(r, 800));
+        await new Promise((r) => setTimeout(r, 600));
       } catch (error) {
-        // Step 3: Reliable fallback (Vidsrc.to)
+        // Step 3: Reliable fallback (Vidsrc.ru for Progress Syncing)
         url = isTv
-          ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-          : imdbId 
-            ? `https://vidsrc.to/embed/movie/${imdbId}` 
-            : `https://vidsrc.to/embed/movie/${tmdbId}`;
+          ? `https://vidsrc.ru/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}?autoplay=true`
+          : `https://vidsrc.ru/movie/${tmdbId}?autoplay=true`;
       } finally {
         setIsChecking(false);
       }
@@ -185,6 +183,16 @@ const MovieDetail: React.FC = () => {
       url = isTv
         ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
         : `https://vidlink.pro/movie/${tmdbId}`;
+    } else if (serverIndex === 6) {
+      // Vidsrc.xyz (Stability King)
+      url = isTv
+        ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.xyz/embed/movie/${tmdbId}`;
+    } else if (serverIndex === 7) {
+      // AutoEmbed (Global)
+      url = isTv
+        ? `https://autoembed.cc/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://autoembed.cc/embed/movie/${tmdbId}`;
     } else if (serverIndex === 1) {
       url = isTv
         ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
@@ -584,7 +592,7 @@ const MovieDetail: React.FC = () => {
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
                         {isChecking
-                          ? "Probing Server 1, 5, and 4 for the best stream..."
+                          ? "Probing Server 1, 6, and 5 for the best stream..."
                           : "Intelligently checks all sources to find working mirrors"}
                       </span>
                     </div>
@@ -598,16 +606,58 @@ const MovieDetail: React.FC = () => {
 
                 <button
                   disabled={isChecking}
+                  onClick={() => handlePlayOnServer(6)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-left disabled:opacity-50"
+                >
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg group-hover:text-emerald-400 transition-colors text-current flex items-center gap-2">
+                        Server 6 (Most Stable)
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Reliable</span>
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        Best uptime in 2025 • Minimal buffering
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 text-emerald-400 fill-current ml-1" />
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  disabled={isChecking}
+                  onClick={() => handlePlayOnServer(7)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10 transition-all text-left disabled:opacity-50"
+                >
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg group-hover:text-orange-400 transition-colors text-current flex items-center gap-2">
+                        Server 7 (Global)
+                        <span className="text-[10px] bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Fast Loading</span>
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        Optimized for global edge locations
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 text-orange-400 fill-current ml-1" />
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  disabled={isChecking}
                   onClick={() => handlePlayOnServer(0)}
                   className="w-full relative overflow-hidden group btn-glass p-0 border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left disabled:opacity-50"
                 >
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-brand transition-colors text-current flex items-center gap-2">
-                        Server 1 (Primary)
+                        Server 1 (High Quality)
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Fast Streaming • 4K Support • Reliable
+                        Fast Streaming • 4K Support • Modern Player
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
