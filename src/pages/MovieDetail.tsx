@@ -150,20 +150,20 @@ const MovieDetail: React.FC = () => {
     const imdbId = movie?.imdb_id;
 
     if (serverIndex === 0) {
-      // Server 1: Vidsrc.to (Stability King)
+      // Server 1: Vidsrc.xyz (Stability King)
       url = isTv
-        ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : imdbId ? `https://vidsrc.to/embed/movie/${imdbId}` : `https://vidsrc.to/embed/movie/${tmdbId}`;
+        ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.xyz/embed/movie/${tmdbId}`;
     } else if (serverIndex === 1) {
-      // Server 2: Vidsrc.me (Reliable Mirror)
+      // Server 2: Vidsrc.me (Reliable Mirror - User Confirmed Working)
       url = isTv
         ? `https://vidsrc.me/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
         : imdbId ? `https://vidsrc.me/embed/movie/${imdbId}` : `https://vidsrc.me/embed/movie/${tmdbId}`;
     } else if (serverIndex === 2) {
-      // Server 3: Vidsrc.ru (Speed + Progress Sync - As per user docs)
+      // Server 3: Vidsrc.pm (Alternative Stable mirror)
       url = isTv
-        ? `https://vidsrc.ru/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}?autoplay=true`
-        : `https://vidsrc.ru/movie/${tmdbId}?autoplay=true`;
+        ? `https://vidsrc.pm/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidsrc.pm/embed/movie/${tmdbId}`;
     }
 
     if (url) {
@@ -581,11 +581,11 @@ const MovieDetail: React.FC = () => {
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-brand transition-colors text-current flex items-center gap-2">
-                        Server 1 (Primary)
-                        <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Fast</span>
+                        Server 1 (Stable)
+                        <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Recommended</span>
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Modern player • High Quality • Reliable
+                        High uptime mirror • Minimal buffering
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -621,11 +621,11 @@ const MovieDetail: React.FC = () => {
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-sky-400 transition-colors text-current flex items-center gap-2">
-                        Server 3 (Speed)
-                        <span className="text-[10px] bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Progress Sync</span>
+                        Server 3 (Fallback)
+                        <span className="text-[10px] bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Reliable</span>
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Fastest loading • Syncs watch progress
+                        Stable alternative mirror if others fail
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-sky-400/20 flex items-center justify-center group-hover:scale-110 transition-transform">
