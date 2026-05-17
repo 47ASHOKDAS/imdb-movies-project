@@ -122,10 +122,10 @@ const MovieDetail: React.FC = () => {
     const imdbId = movie?.imdb_id;
 
     if (serverIndex === 3) {
-      // Auto Select Logic: Iterative Fallback
+      // Auto Select Logic: Iterative Discovery
       setIsChecking(true);
       try {
-        // Step 1: Check Server 1 (Vidlink) via their status API
+        // Step 1: Check Vidlink (Server 1) via their status API
         const vidlinkApi = isTv 
           ? `https://api.vidlink.pro/v1/tv/${tmdbId}`
           : `https://api.vidlink.pro/v1/movie/${tmdbId}`;
@@ -137,23 +137,20 @@ const MovieDetail: React.FC = () => {
             ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : `https://vidlink.pro/movie/${tmdbId}`;
         } else {
-          // Step 2: Fallback to Server 2 (Vidsrc.to) - Preferred Aggregator
-          // Vidsrc.to is generally the most stable broad-source aggregator
+          // Step 2: Fallback to SmashyStream (known for multi-audio mirrors)
           url = isTv
-            ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-            : imdbId 
-              ? `https://vidsrc.to/embed/movie/${imdbId}` 
-              : `https://vidsrc.to/embed/movie/${tmdbId}`;
+            ? `https://embed.smashystream.com/play/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+            : `https://embed.smashystream.com/play/movie/${tmdbId}`;
         }
         
         await new Promise((r) => setTimeout(r, 800));
       } catch (error) {
-        // Step 3: Final Fallback to Server 3 (Vidsrc.icu) 
+        // Step 3: Reliable fallback
         url = isTv
-          ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+          ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
           : imdbId 
-            ? `https://vidsrc.icu/embed/movie/${imdbId}` 
-            : `https://vidsrc.icu/embed/movie/${tmdbId}`;
+            ? `https://vidsrc.to/embed/movie/${imdbId}` 
+            : `https://vidsrc.to/embed/movie/${tmdbId}`;
       } finally {
         setIsChecking(false);
       }
@@ -165,6 +162,11 @@ const MovieDetail: React.FC = () => {
       url = isTv
         ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
         : imdbId ? `https://vidsrc.to/embed/movie/${imdbId}` : `https://vidsrc.to/embed/movie/${tmdbId}`;
+    } else if (serverIndex === 4) {
+      // New: SmashyStream (Experimental Multi-Audio)
+      url = isTv
+        ? `https://embed.smashystream.com/play/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://embed.smashystream.com/play/movie/${tmdbId}`;
     } else {
       url = isTv
         ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
@@ -550,7 +552,7 @@ const MovieDetail: React.FC = () => {
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
                         {isChecking
-                          ? "Probing Server 1, 2, and 3 for the best stream..."
+                          ? "Probing Server 1, 4, and 2 for the best stream..."
                           : "Intelligently checks all sources to find working mirrors"}
                       </span>
                     </div>
@@ -571,14 +573,34 @@ const MovieDetail: React.FC = () => {
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-brand transition-colors text-current flex items-center gap-2">
                         Server 1 (Primary)
-                        <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Multi-Audio</span>
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        Best choice for multiple languages • 4K Support
+                        Fast Streaming • 4K Support • Reliable
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Play className="w-5 h-5 text-brand fill-current ml-1" />
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  disabled={isChecking}
+                  onClick={() => handlePlayOnServer(4)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 transition-all text-left disabled:opacity-50"
+                >
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg group-hover:text-purple-400 transition-colors text-current flex items-center gap-2">
+                        Server 4 (Multi-Audio)
+                        <span className="text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Dual Audio</span>
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        Experimental • Supports Hindi/English/Dual tracks
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 text-purple-400 fill-current ml-1" />
                     </div>
                   </div>
                 </button>
