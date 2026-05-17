@@ -37,6 +37,33 @@ const MovieDetail: React.FC = () => {
   const [showServerModal, setShowServerModal] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   
+  // Progress Syncing Implementation
+  useEffect(() => {
+    const STORAGE_KEY = 'watch_progress';
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'MEDIA_DATA') {
+        const mediaData = event.data.data;
+        if (mediaData.id && (mediaData.type === 'movie' || mediaData.type === 'tv')) {
+          try {
+            const watchProgress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            watchProgress[mediaData.id] = {
+              ...watchProgress[mediaData.id],
+              ...mediaData,
+              last_updated: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(watchProgress));
+            console.log('Watch progress synced:', mediaData);
+          } catch (e) {
+            console.error("Failed to sync watch progress", e);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   useEffect(() => {
     const loadMovie = async () => {
       if (!id) return;
@@ -137,10 +164,10 @@ const MovieDetail: React.FC = () => {
             ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : `https://vidlink.pro/movie/${tmdbId}`;
         } else {
-          // Step 2: Fallback to SmashyStream (Query-based path)
+          // Step 2: Fallback to Vidsrc.ru (New High-Performance Server)
           url = isTv
-            ? `https://embed.smashystream.com/play/tv?tmdb=${tmdbId}&season=${selectedSeason}&episode=${selectedEpisode}`
-            : `https://embed.smashystream.com/play/movie?tmdb=${tmdbId}`;
+            ? `https://vidsrc.ru/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}?autoplay=true`
+            : `https://vidsrc.ru/movie/${tmdbId}?autoplay=true`;
         }
         
         await new Promise((r) => setTimeout(r, 800));
@@ -167,6 +194,11 @@ const MovieDetail: React.FC = () => {
       url = isTv
         ? `https://embed.smashystream.com/play/tv?tmdb=${tmdbId}&season=${selectedSeason}&episode=${selectedEpisode}`
         : `https://embed.smashystream.com/play/movie?tmdb=${tmdbId}`;
+    } else if (serverIndex === 5) {
+      // New: Vidsrc.ru (Fast Internal Player)
+      url = isTv
+        ? `https://vidsrc.ru/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}?autoplay=true`
+        : `https://vidsrc.ru/movie/${tmdbId}?autoplay=true`;
     } else {
       url = isTv
         ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
@@ -552,7 +584,7 @@ const MovieDetail: React.FC = () => {
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
                         {isChecking
-                          ? "Probing Server 1, 4, and 2 for the best stream..."
+                          ? "Probing Server 1, 5, and 4 for the best stream..."
                           : "Intelligently checks all sources to find working mirrors"}
                       </span>
                     </div>
@@ -580,6 +612,27 @@ const MovieDetail: React.FC = () => {
                     </div>
                     <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Play className="w-5 h-5 text-brand fill-current ml-1" />
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  disabled={isChecking}
+                  onClick={() => handlePlayOnServer(5)}
+                  className="w-full relative overflow-hidden group btn-glass p-0 border border-sky-400/30 bg-sky-400/5 hover:bg-sky-400/10 transition-all text-left disabled:opacity-50"
+                >
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg group-hover:text-sky-400 transition-colors text-current flex items-center gap-2">
+                        Server 5 (Speed)
+                        <span className="text-[10px] bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">Faster</span>
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        Optimized for low latency • Progress Syncing
+                      </span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-sky-400/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 text-sky-400 fill-current ml-1" />
                     </div>
                   </div>
                 </button>
