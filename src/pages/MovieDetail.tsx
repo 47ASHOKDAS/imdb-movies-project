@@ -137,10 +137,10 @@ const MovieDetail: React.FC = () => {
             ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
             : `https://vidlink.pro/movie/${tmdbId}`;
         } else {
-          // Step 2: Fallback to SmashyStream (correct path)
+          // Step 2: Fallback to SmashyStream (Query-based path)
           url = isTv
-            ? `https://embed.smashystream.com/play/tmdb/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-            : `https://embed.smashystream.com/play/tmdb/movie/${tmdbId}`;
+            ? `https://embed.smashystream.com/play/tv?tmdb=${tmdbId}&season=${selectedSeason}&episode=${selectedEpisode}`
+            : `https://embed.smashystream.com/play/movie?tmdb=${tmdbId}`;
         }
         
         await new Promise((r) => setTimeout(r, 800));
@@ -163,10 +163,10 @@ const MovieDetail: React.FC = () => {
         ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
         : imdbId ? `https://vidsrc.to/embed/movie/${imdbId}` : `https://vidsrc.to/embed/movie/${tmdbId}`;
     } else if (serverIndex === 4) {
-      // Corrected SmashyStream URL (tmdb prefix required)
+      // Corrected SmashyStream URL (Query-based pattern for reliability)
       url = isTv
-        ? `https://embed.smashystream.com/play/tmdb/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://embed.smashystream.com/play/tmdb/movie/${tmdbId}`;
+        ? `https://embed.smashystream.com/play/tv?tmdb=${tmdbId}&season=${selectedSeason}&episode=${selectedEpisode}`
+        : `https://embed.smashystream.com/play/movie?tmdb=${tmdbId}`;
     } else {
       url = isTv
         ? `https://vidsrc.icu/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
