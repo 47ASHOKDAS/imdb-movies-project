@@ -150,10 +150,10 @@ const MovieDetail: React.FC = () => {
     const imdbId = movie?.imdb_id;
 
     if (serverIndex === 0) {
-      // Server 1: Vidsrc.xyz (Stability King)
+      // Server 1: Vidlink (Modern & Fast)
       url = isTv
-        ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.xyz/embed/movie/${tmdbId}`;
+        ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : `https://vidlink.pro/movie/${tmdbId}`;
     } else if (serverIndex === 1) {
       // Server 2: Vidsrc.me (Reliable Mirror - User Confirmed Working)
       url = isTv
@@ -581,11 +581,11 @@ const MovieDetail: React.FC = () => {
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="font-bold text-lg group-hover:text-brand transition-colors text-current flex items-center gap-2">
-                        Server 1 (Stable)
-                        <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Recommended</span>
+                        Server 1 (Primary)
+                        <span className="text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded uppercase tracking-tighter">Fast</span>
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
-                        High uptime mirror • Minimal buffering
+                        Modern player • High Quality • Fast Streaming
                       </span>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center group-hover:scale-110 transition-transform">
