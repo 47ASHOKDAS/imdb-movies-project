@@ -35,6 +35,8 @@ const MovieDetail: React.FC = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<number | "">(1);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
   const [showServerModal, setShowServerModal] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [activeUrl, setActiveUrl] = useState("");
   
   // Progress Syncing Implementation
   useEffect(() => {
@@ -148,27 +150,25 @@ const MovieDetail: React.FC = () => {
     const imdbId = movie?.imdb_id;
 
     if (serverIndex === 0) {
-      // Server 1: Vidlink (Fast & Modern)
+      // Server 1: Vidsrc.to (Stability King)
       url = isTv
-        ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidlink.pro/movie/${tmdbId}`;
+        ? `https://vidsrc.to/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : imdbId ? `https://vidsrc.to/embed/movie/${imdbId}` : `https://vidsrc.to/embed/movie/${tmdbId}`;
     } else if (serverIndex === 1) {
-      // Server 2: Vidsrc.xyz (Stable)
+      // Server 2: Vidsrc.me (Reliable Mirror)
       url = isTv
-        ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.xyz/embed/movie/${tmdbId}`;
+        ? `https://vidsrc.me/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
+        : imdbId ? `https://vidsrc.me/embed/movie/${imdbId}` : `https://vidsrc.me/embed/movie/${tmdbId}`;
     } else if (serverIndex === 2) {
-      // Server 3: Vidsrc.ru (Speed + Progress Sync)
+      // Server 3: Vidsrc.ru (Speed + Progress Sync - As per user docs)
       url = isTv
         ? `https://vidsrc.ru/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}?autoplay=true`
         : `https://vidsrc.ru/movie/${tmdbId}?autoplay=true`;
     }
 
     if (url) {
-      const newWindow = window.open(url, "_blank");
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        alert("Popup blocked! Please allow popups to watch the movie.");
-      }
+      setActiveUrl(url);
+      setShowPlayer(true);
       setShowServerModal(false);
     }
   };
@@ -385,6 +385,57 @@ const MovieDetail: React.FC = () => {
           </section>
         )}
       </div>
+
+      {/* Player Modal */}
+      <AnimatePresence>
+        {showPlayer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black"
+          >
+            <div className="absolute inset-0 bg-black" />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full h-full flex flex-col"
+            >
+              <div className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between z-20 bg-gradient-to-b from-black to-transparent">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setShowPlayer(false)}
+                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors backdrop-blur-md"
+                  >
+                    <Plus className="w-6 h-6 rotate-45" />
+                  </button>
+                  <h3 className="font-display font-black uppercase text-lg tracking-tighter">
+                    {movie.title}
+                    {isTv && ` • S${selectedSeason} E${selectedEpisode}`}
+                  </h3>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-brand text-white shadow-lg shadow-brand/20">
+                    Active
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex-grow relative bg-black">
+                <iframe
+                  src={activeUrl}
+                  className="w-full h-full border-0"
+                  allowFullScreen
+                  referrerPolicy="no-referrer"
+                  allow="autoplay; encrypted-media"
+                  title="Video Player"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Trailer Modal */}
       <AnimatePresence>
