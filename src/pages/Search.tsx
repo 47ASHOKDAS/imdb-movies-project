@@ -4,6 +4,7 @@ import { Movie } from '../types';
 import { tmdbService } from '../services/tmdb';
 import MovieCard from '../components/movies/MovieCard';
 import { MovieGridSkeleton } from '../components/ui/Skeleton';
+import ErrorMessage from '../components/common/ErrorMessage';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -208,13 +209,13 @@ const Search: React.FC = () => {
 
       <AnimatePresence mode="wait">
         {error ? (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-20"
-          >
-            <p className="text-zinc-500 text-lg">{error}</p>
-          </motion.div>
+          <div className="flex items-center justify-center py-20">
+            <ErrorMessage 
+              message={error} 
+              onRetry={() => handleSearch(query)} 
+              className="bg-transparent border-none shadow-none"
+            />
+          </div>
         ) : loading ? (
           <MovieGridSkeleton count={12} />
         ) : (

@@ -6,7 +6,7 @@ async function fetchTMDB<T>(
   params: Record<string, string> = {},
 ): Promise<T> {
   if (!TMDB_API_KEY) {
-    throw new Error("VITE_TMDB_API_KEY is not set");
+    throw new Error("API configuration missing. Please check your TMDB API key in settings.");
   }
 
   const queryParams = new URLSearchParams({
@@ -14,11 +14,52 @@ async function fetchTMDB<T>(
     ...params,
   });
 
-  const response = await fetch(`${TMDB_BASE_URL}${endpoint}?${queryParams}`);
-  if (!response.ok) {
-    throw new Error(`TMDB API error: ${response.statusText}`);
+  try {
+    const response = await fetch(`${TMDB_BASE_URL}${endpoint}?${queryParams}`);
+    
+    if (!response.ok) {
+      let errorMessage = "An unexpected error occurred while fetching data.";
+      
+      switch (response.status) {
+        case 401:
+          errorMessage = "Unauthorized access. Please verify your API key.";
+          break;
+        case 404:
+          errorMessage = "The requested content could not be found.";
+          break;
+        case 429:
+          errorMessage = "Too many requests. Please try again in a moment.";
+          break;
+        case 500:
+        case 503:
+          errorMessage = "TMDB server is currently down. Please try again later.";
+          break;
+        default:
+          errorMessage = `TMDB API error: ${response.statusText || response.status}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      // If it's already one of our custom errors, rethrow it
+      if (error.message.includes("TMDB API error") || 
+          error.message.includes("Unauthorized") || 
+          error.message.includes("not be found") ||
+          error.message.includes("Too many requests") ||
+          error.message.includes("server is currently down")) {
+        throw error;
+      }
+      
+      // Handle network/connection errors
+      if (error.message === "Failed to fetch" || error.name === "TypeError") {
+        throw new Error("Network error. Please check your internet connection.");
+      }
+    }
+    throw error;
   }
-  return response.json();
 }
 
 export const tmdbService = {

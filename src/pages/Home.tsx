@@ -4,6 +4,7 @@ import { Movie } from "../types";
 import MovieCard from "../components/movies/MovieCard";
 import { MovieGridSkeleton } from "../components/ui/Skeleton";
 import SEO from "../components/common/SEO";
+import ErrorMessage from "../components/common/ErrorMessage";
 import { GENRES, PROVIDERS } from "../components/layout/Sidebar";
 import { TrendingUp, Star, Zap, ChevronRight, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -38,64 +39,62 @@ const Home = ({ type = "movie" }: HomeProps) => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const isGridMode = selectedGenre !== "all" || !!selectedYear || selectedProvider !== "all";
 
+  const fetchInitialData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [trendingRes, bollywoodRes, hollywoodRes] = await Promise.all([
+        tmdbService.getTrending(type),
+        tmdbService.getBollywood(type),
+        tmdbService.getHollywood(type),
+      ]);
+      setTrending(trendingRes.results);
+      setBollywood(bollywoodRes.results);
+      setHollywood(hollywoodRes.results);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to load movies. Please try again.");
+      console.error("Error fetching movies:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      try {
-        const [trendingRes, bollywoodRes, hollywoodRes] = await Promise.all([
-          tmdbService.getTrending(type),
-          tmdbService.getBollywood(type),
-          tmdbService.getHollywood(type),
-        ]);
-        setTrending(trendingRes.results);
-        setBollywood(bollywoodRes.results);
-        setHollywood(hollywoodRes.results);
-      } catch (error) {
-        console.error("Error fetching movies:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     if (!isGridMode) fetchInitialData();
   }, [isGridMode, type]);
 
+  const fetchFirstPage = async () => {
+    setLoading(true);
+    setError(null);
+    setGenreMovies([]); // Clear previous category movies
+    setPage(1);
+    try {
+      const res = await tmdbService.getMoviesByGenre(
+        selectedGenre,
+        1,
+        type,
+        selectedYear,
+        selectedProvider
+      );
+      setGenreMovies(res.results);
+      setPage(1);
+      setHasMore(res.total_pages > 1);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to load category. Please try again.");
+      console.error("Error fetching genre movies:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!isGridMode) return;
-
-    let isMounted = true;
-
-    const fetchFirstPage = async () => {
-      setLoading(true);
-      setGenreMovies([]); // Clear previous category movies
-      setPage(1);
-      try {
-        const res = await tmdbService.getMoviesByGenre(
-          selectedGenre,
-          1,
-          type,
-          selectedYear,
-          selectedProvider
-        );
-        if (isMounted) {
-          setGenreMovies(res.results);
-          setPage(1);
-          setHasMore(res.total_pages > 1);
-        }
-      } catch (error) {
-        console.error("Error fetching genre movies:", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
     fetchFirstPage();
     window.scrollTo(0, 0);
-
-    return () => {
-      isMounted = false;
-    };
   }, [isGridMode, selectedGenre, type, selectedYear, selectedProvider]);
 
   const loadMore = React.useCallback(async () => {
@@ -204,7 +203,14 @@ const Home = ({ type = "movie" }: HomeProps) => {
       />
 
       <main className="flex-grow w-full">
-        {!isGridMode ? (
+        {error ? (
+          <div className="pt-40 px-6 flex items-center justify-center">
+            <ErrorMessage 
+              message={error} 
+              onRetry={isGridMode ? fetchFirstPage : fetchInitialData} 
+            />
+          </div>
+        ) : !isGridMode ? (
           <div className="pt-32 px-6 md:px-12 pb-20 relative z-20">
             <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div>

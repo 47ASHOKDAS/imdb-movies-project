@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import MovieCard from "../components/movies/MovieCard";
 import SEO from "../components/common/SEO";
+import ErrorMessage from "../components/common/ErrorMessage";
 
 const MovieDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +38,7 @@ const MovieDetail: React.FC = () => {
   const [showServerModal, setShowServerModal] = useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
   const [activeUrl, setActiveUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
   
   // Progress Syncing Implementation
   useEffect(() => {
@@ -65,41 +67,44 @@ const MovieDetail: React.FC = () => {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  useEffect(() => {
-    const loadMovie = async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-        const data = isTv
-          ? await tmdbService.getTvDetails(id)
-          : await tmdbService.getMovieDetails(id);
-        const mappedData = isTv
-          ? { ...data, title: data.name, release_date: data.first_air_date }
-          : data;
-        setMovie(mappedData);
+  const loadMovie = async () => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = isTv
+        ? await tmdbService.getTvDetails(id)
+        : await tmdbService.getMovieDetails(id);
+      const mappedData = isTv
+        ? { ...data, title: data.name, release_date: data.first_air_date }
+        : data;
+      setMovie(mappedData);
 
-        const similar = isTv
-          ? await tmdbService.getSimilarTv(id)
-          : await tmdbService.getSimilarMovies(id);
-        const mappedSimilar = isTv
-          ? similar.results.map((item: any) => ({
-              ...item,
-              title: item.name,
-              release_date: item.first_air_date,
-            }))
-          : similar.results;
-        setSimilarMovies(mappedSimilar.slice(0, 10));
+      const similar = isTv
+        ? await tmdbService.getSimilarTv(id)
+        : await tmdbService.getSimilarMovies(id);
+      const mappedSimilar = isTv
+        ? similar.results.map((item: any) => ({
+            ...item,
+            title: item.name,
+            release_date: item.first_air_date,
+          }))
+        : similar.results;
+      setSimilarMovies(mappedSimilar.slice(0, 10));
 
-        if (data.imdb_id) {
-          const omdb = await omdbService.getMovieByImdbId(data.imdb_id);
-          setOmdbData(omdb);
-        }
-      } catch (error) {
-        console.error("Error loading details:", error);
-      } finally {
-        setLoading(false);
+      if (data.imdb_id) {
+        const omdb = await omdbService.getMovieByImdbId(data.imdb_id);
+        setOmdbData(omdb);
       }
-    };
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to load movie details. Please try again.");
+      console.error("Error loading details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadMovie();
     window.scrollTo(0, 0);
   }, [id, isTv]);
@@ -114,6 +119,14 @@ const MovieDetail: React.FC = () => {
         >
           IMDB<span className="text-current">flix</span>
         </motion.div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-obsidian p-6">
+        <ErrorMessage message={error} onRetry={loadMovie} />
       </div>
     );
   }

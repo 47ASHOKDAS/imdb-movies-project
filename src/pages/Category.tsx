@@ -5,6 +5,7 @@ import { Movie } from "../types";
 import MovieCard from "../components/movies/MovieCard";
 import { Loader2, ArrowLeft } from "lucide-react";
 import SEO from "../components/common/SEO";
+import ErrorMessage from "../components/common/ErrorMessage";
 
 const getCategoryTitle = (slug: string) => {
   switch (slug) {
@@ -33,6 +34,7 @@ const Category = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchMovies = async (pageNum: number) => {
     switch (slug) {
@@ -51,32 +53,27 @@ const Category = () => {
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchInitialData = async () => {
-      setLoading(true);
-      setMovies([]);
+  const fetchInitialData = async () => {
+    setLoading(true);
+    setError(null);
+    setMovies([]);
+    setPage(1);
+    try {
+      const res = await fetchMovies(1);
+      setMovies(res.results);
       setPage(1);
-      try {
-        const res = await fetchMovies(1);
-        if (isMounted) {
-          setMovies(res.results);
-          setPage(1);
-          setHasMore(res.total_pages > 1);
-        }
-      } catch (error) {
-        console.error("Error fetching movies:", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
+      setHasMore(res.total_pages > 1);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to load movies. Please try again.");
+      console.error("Error fetching movies:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchInitialData();
     window.scrollTo(0, 0);
-
-    return () => {
-      isMounted = false;
-    };
   }, [type, slug]);
 
   const loadMore = useCallback(async () => {
@@ -126,6 +123,14 @@ const Category = () => {
     return (
       <div className="pt-20 bg-obsidian min-h-screen flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-brand animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="pt-40 px-6 flex items-center justify-center min-h-screen">
+        <ErrorMessage message={error} onRetry={fetchInitialData} />
       </div>
     );
   }
