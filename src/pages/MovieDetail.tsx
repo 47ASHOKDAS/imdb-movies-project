@@ -556,57 +556,6 @@ const MovieDetail: React.FC = () => {
                 </button>
               </div>
 
-              {!hasPlayableSource && (
-                <div className="flex flex-col gap-3 w-full max-w-2xl mt-2">
-                  <div className="flex items-center gap-2 text-zinc-400 font-bold text-xs uppercase tracking-wider">
-                    <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-                    <span>Watch Options</span>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {providers.length > 0 ? (
-                      providers.slice(0, 4).map((p: any) => (
-                        <button
-                          key={p.provider_id}
-                          onClick={() => {
-                            if (watchLink) {
-                              console.log("selected source: External provider (TMDB Watch Providers link)");
-                              window.open(watchLink, "_blank");
-                            }
-                          }}
-                          className="flex items-center gap-2.5 bg-zinc-900 border border-white/5 hover:border-brand/40 hover:bg-zinc-850 px-4 py-3 rounded-xl transition duration-300 hover:scale-[1.01] text-white cursor-pointer shadow-lg shadow-black/20"
-                        >
-                          {p.logo_path && (
-                            <img
-                              src={`https://image.tmdb.org/t/p/original${p.logo_path}`}
-                              alt={p.provider_name}
-                              className="w-5 h-5 rounded object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          )}
-                          <span className="text-xs font-bold uppercase tracking-wider">
-                            Watch on {p.provider_name}
-                          </span>
-                        </button>
-                      ))
-                    ) : watchLink ? (
-                      <button
-                        onClick={() => window.open(watchLink, "_blank")}
-                        className="flex items-center gap-2.5 bg-zinc-900 border border-white/5 hover:border-brand/40 px-5 py-3 rounded-xl transition duration-300 hover:scale-[1.01] text-white cursor-pointer"
-                      >
-                        <Play className="w-4 h-4 fill-current text-white animate-pulse" />
-                        <span className="text-xs font-bold uppercase tracking-wider">
-                          Stream on External Provider
-                        </span>
-                      </button>
-                    ) : (
-                      <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest bg-zinc-900/40 px-5 py-3 rounded-xl border border-white/5">
-                        No Streaming Provider config found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={() =>
@@ -1081,7 +1030,7 @@ const MovieDetail: React.FC = () => {
                         <p className="lowercase tracking-wide font-medium">Protocol</p>
                         <p className="text-zinc-300 uppercase tracking-tight">
                           {playerMode === "embed"
-                            ? "Iframe sandbox"
+                            ? "Web Mirror"
                             : activeServer.url.endsWith(".m3u8") || activeServer.url.includes("adaptive")
                             ? "HLS (.m3u8)"
                             : "MP4 Progressive"}
