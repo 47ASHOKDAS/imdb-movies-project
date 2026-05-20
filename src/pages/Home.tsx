@@ -6,12 +6,109 @@ import { MovieGridSkeleton, Skeleton } from "../components/ui/Skeleton";
 import SEO from "../components/common/SEO";
 import ErrorMessage from "../components/common/ErrorMessage";
 import { GENRES, PROVIDERS } from "../components/layout/Sidebar";
-import { TrendingUp, Star, Zap, ChevronRight, Loader2 } from "lucide-react";
+import { TrendingUp, Star, Zap, ChevronRight, Loader2, Play } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "../lib/utils";
+import { motion, AnimatePresence } from "motion/react";
 
 interface HomeProps {
   type?: "movie" | "tv";
+}
+
+function CinematicHero({ trendingMovies, type }: { trendingMovies: Movie[]; type: "movie" | "tv" }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (trendingMovies.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % Math.min(trendingMovies.length, 5));
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [trendingMovies.length]);
+
+  if (trendingMovies.length === 0) return null;
+  const movie = trendingMovies[currentIndex];
+  const backdropUrl = tmdbService.getImageUrl(movie.backdrop_path, "original");
+  const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
+  const releaseYear = movie.release_date 
+    ? new Date(movie.release_date).getFullYear() 
+    : (movie.first_air_date ? new Date(movie.first_air_date).getFullYear() : "N/A");
+
+  return (
+    <div className="relative w-full h-[60vh] md:h-[75vh] overflow-hidden bg-black rounded-3xl mt-8 mb-16 border border-white/5 shadow-2xl shadow-cyan-500/5 group">
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={movie.id}
+          initial={{ opacity: 0, scale: 1.03 }} 
+          animate={{ opacity: 1, scale: 1 }} 
+          exit={{ opacity: 0 }} 
+          transition={{ duration: 0.8 }}
+          className="absolute inset-0 z-0"
+        >
+          <img 
+            src={backdropUrl} 
+            alt={movie.title} 
+            className="w-full h-full object-cover animate-hero-bg opacity-70 md:opacity-80" 
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#030305] via-[#030305]/45 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#030305] via-[#030305]/75 to-transparent w-full md:w-2/3" />
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="absolute inset-0 z-20 container mx-auto px-6 md:px-12 flex flex-col justify-end pb-8 md:pb-12">
+        <div className="max-w-2xl bg-black/20 p-6 md:p-8 rounded-2xl backdrop-blur-sm border border-white/5">
+          <motion.div 
+            key={`meta-${movie.id}`} 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="flex items-center gap-3 mb-4"
+          >
+            <span className="px-2.5 py-0.5 rounded-md bg-cyan-400/10 text-cyan-400 border border-cyan-400/25 text-[10px] font-mono font-bold uppercase tracking-wider">PREMIERE</span>
+            <span className="flex items-center gap-1 text-amber-400 text-xs font-bold bg-black/55 px-2.5 py-0.5 rounded-md backdrop-blur-md">
+              <Star size={13} fill="currentColor" className="text-amber-400" /> {rating}
+            </span>
+            <span className="text-xs text-zinc-400 font-bold bg-black/55 px-2.5 py-0.5 rounded-md font-mono">{releaseYear}</span>
+          </motion.div>
+          
+          <motion.h1 
+            key={`title-${movie.id}`} 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.1 }}
+            className="text-2xl md:text-4xl lg:text-5xl font-display font-black mb-3 text-white uppercase tracking-tight line-clamp-1"
+          >
+            {movie.title}
+          </motion.h1>
+          
+          <motion.p 
+            key={`desc-${movie.id}`} 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.2 }}
+            className="text-zinc-300 text-xs md:text-sm mb-6 line-clamp-3 leading-relaxed font-light"
+          >
+            {movie.overview}
+          </motion.p>
+          
+          <motion.div 
+            key={`actions-${movie.id}`} 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.3 }}
+            className="flex items-center gap-4"
+          >
+            <Link 
+              to={`/${type}/${movie.id}`} 
+              className="px-5 py-2.5 bg-white text-black rounded-lg font-bold text-xs md:text-sm flex items-center gap-2 hover:bg-zinc-200 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+            >
+              <Play fill="currentColor" size={14} /> VIEW DETAILS
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const Home = ({ type = "movie" }: HomeProps) => {
@@ -219,48 +316,50 @@ const Home = ({ type = "movie" }: HomeProps) => {
             />
           </div>
         ) : !isGridMode ? (
-          <div className="pt-32 px-6 md:px-12 pb-20 relative z-20">
-            <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="pt-24 px-6 md:px-12 pb-20 relative z-20">
+            <CinematicHero trendingMovies={trending} type={type} />
+
+            <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
               <div>
-                <h1 className="text-4xl md:text-5xl font-display font-black tracking-tight">
+                <h1 className="text-3xl md:text-4xl font-display font-black tracking-tight uppercase">
                   Discover <span className="text-brand">{type === "movie" ? "Movies" : "TV Shows"}</span>
                 </h1>
-                <p className="text-zinc-500 mt-2 text-lg">
-                  Explore the best {type === "movie" ? "movies" : "shows"} across various categories.
+                <p className="text-zinc-500 mt-2 text-sm tracking-wide">
+                  Explore top recommendations and curated libraries on our NEXUS grid.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-w-[200px]">
                 <label
                   htmlFor="year-select-home"
-                  className="text-xs font-bold text-zinc-500 uppercase tracking-wider"
+                  className="text-[10px] font-bold text-cyan-400 font-mono uppercase tracking-[0.2em]"
                 >
-                  Filter by Year
+                  SYS_FILTER_YEAR
                 </label>
                 <div className="relative">
                   <select
                     id="year-select-home"
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(e.target.value)}
-                    className="w-full bg-current/5 border border-current/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-current/10 appearance-none"
+                    className="w-full bg-[#0d0d12]/60 border border-white/5 text-zinc-300 rounded-xl outline-none cursor-pointer px-4 py-3 font-mono font-bold backdrop-blur-md hover:bg-zinc-900/80 transition-colors appearance-none"
                   >
                     <option
                       value=""
-                      className="bg-[var(--theme-bg)] text-current"
+                      className="bg-[#030305] text-zinc-300"
                     >
-                      All Years
+                      ALL REALMS
                     </option>
                     {years.map((year) => (
                       <option
                         key={year}
                         value={year}
-                        className="bg-[var(--theme-bg)] text-current"
+                        className="bg-[#030305] text-zinc-300"
                       >
                         {year}
                       </option>
                     ))}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <ChevronRight className="w-5 h-5 text-zinc-400 rotate-90" />
+                    <ChevronRight className="w-4 h-4 text-cyan-400 rotate-90" />
                   </div>
                 </div>
               </div>
