@@ -34,7 +34,7 @@ import {
   saveCustomServersForMovie,
   getCustomServersForMovie
 } from "../services/legalSources";
-import VideoPlayer from "../components/player/VideoPlayer";
+import { SecureVideoPlayer } from "../components/player/SecureVideoPlayer";
 import ServerSelector from "../components/player/ServerSelector";
 import ErrorFallback from "../components/player/ErrorFallback";
 import { Settings, Info, Save, Undo2, Tv } from "lucide-react";
@@ -676,9 +676,10 @@ const MovieDetail: React.FC = () => {
                 <div className="lg:col-span-8 relative flex flex-col justify-center bg-zinc-950 min-h-[300px] border-b lg:border-b-0 lg:border-r border-white/5 overflow-hidden">
                   {playerMode === "html5" ? (
                     <>
-                      {/* Only render VideoPlayer if a valid url exists */}
+                      {/* Only render SecureVideoPlayer if a valid url exists */}
                       {activeServer && activeServer.url ? (
-                        <VideoPlayer
+                        <SecureVideoPlayer
+                          movieId={id || ""}
                           server={activeServer}
                           onVideoError={handleVideoError}
                           title={movie.title}
