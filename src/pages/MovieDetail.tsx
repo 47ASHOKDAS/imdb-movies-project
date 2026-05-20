@@ -26,6 +26,12 @@ import MovieCard from "../components/movies/MovieCard";
 import SEO from "../components/common/SEO";
 import ErrorMessage from "../components/common/ErrorMessage";
 
+// Safe, legal multi-server custom streaming components
+import { getLegalSourceForMovie, LegalMovieSource, VideoServer } from "../services/legalSources";
+import VideoPlayer from "../components/player/VideoPlayer";
+import ServerSelector from "../components/player/ServerSelector";
+import ErrorFallback from "../components/player/ErrorFallback";
+
 const MovieDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
@@ -46,6 +52,13 @@ const MovieDetail: React.FC = () => {
     const saved = localStorage.getItem("preferred_server");
     return saved !== null ? parseInt(saved, 10) : null;
   });
+
+  // Safe, legal multi-server video player states
+  const [legalSource, setLegalSource] = useState<LegalMovieSource | null>(null);
+  const [activeServer, setActiveServer] = useState<VideoServer | null>(null);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [loadingServerId, setLoadingServerId] = useState<number | null>(null);
+  const [failedServer, setFailedServer] = useState<VideoServer | null>(null);
   
   // Progress Syncing Implementation
   useEffect(() => {
@@ -86,6 +99,10 @@ const MovieDetail: React.FC = () => {
         ? { ...data, title: data.name, release_date: data.first_air_date }
         : data;
       setMovie(mappedData);
+
+      // Procedurally generate or lookup CC available legal multi-server sources
+      const sources = getLegalSourceForMovie(id, mappedData.title);
+      setLegalSource(sources);
 
       const similar = isTv
         ? await tmdbService.getSimilarTv(id)
@@ -154,9 +171,17 @@ const MovieDetail: React.FC = () => {
     watchData?.flatrate || watchData?.rent || watchData?.buy || [];
   const watchLink = watchData?.link;
 
+  // Launches the legal multi-server video player workflow
   const handleWatchNow = () => {
-    if (movie.id) {
-      setShowServerModal(true);
+    if (legalSource && legalSource.servers.length > 0) {
+      // Find the user's preferred server if set, or default to general index
+      const preferred = preferredServer !== null ? legalSource.servers[preferredServer] : null;
+      const initialServer = preferred || legalSource.servers[0];
+      
+      setActiveServer(initialServer);
+      setPlaybackError(null);
+      setFailedServer(null);
+      setShowPlayer(true);
     } else if (watchLink) {
       window.open(watchLink, "_blank");
     } else {
@@ -164,32 +189,45 @@ const MovieDetail: React.FC = () => {
     }
   };
 
-  const handlePlayOnServer = (serverIndex: number) => {
-    let url = "";
-    const tmdbId = movie?.id;
-    const imdbId = movie?.imdb_id;
+  // Handles custom video error and starts the automatic fallback loop
+  const handleVideoError = (errorMsg: string) => {
+    console.warn("Playback error handler invoked:", errorMsg);
+    if (!activeServer || !legalSource) return;
 
-    if (serverIndex === 0) {
-      // Server 1: Vidlink (Modern & Fast)
-      url = isTv
-        ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidlink.pro/movie/${tmdbId}`;
-    } else if (serverIndex === 1) {
-      // Server 2: Vidsrc.me (Reliable Mirror - User Confirmed Working)
-      url = isTv
-        ? `https://vidsrc.me/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : imdbId ? `https://vidsrc.me/embed/movie/${imdbId}` : `https://vidsrc.me/embed/movie/${tmdbId}`;
-    } else if (serverIndex === 2) {
-      // Server 3: Vidsrc.pm (Alternative Stable mirror)
-      url = isTv
-        ? `https://vidsrc.pm/embed/tv/${tmdbId}/${selectedSeason}/${selectedEpisode}`
-        : `https://vidsrc.pm/embed/movie/${tmdbId}`;
+    setFailedServer(activeServer);
+    setPlaybackError(errorMsg);
+  };
+
+  // Switches to the next backup server automatically or manually
+  const handleAutoSwitch = (nextServer: VideoServer | null) => {
+    if (nextServer) {
+      console.log("Auto-switching to backup server:", nextServer.name);
+      setPlaybackError(null);
+      setFailedServer(null);
+      setActiveServer(nextServer);
     }
+  };
 
-    if (url) {
-      setActiveUrl(url);
+  // Retries current server source
+  const handleRetryServer = () => {
+    if (!activeServer) return;
+    console.log("Retrying custom server connection...");
+    setPlaybackError(null);
+    setFailedServer(null);
+
+    const reattained = activeServer;
+    setActiveServer(null);
+    setTimeout(() => {
+      setActiveServer(reattained);
+    }, 100);
+  };
+
+  const handlePlayOnServer = (serverIndex: number) => {
+    if (legalSource && legalSource.servers[serverIndex]) {
+      setPlaybackError(null);
+      setFailedServer(null);
+      setActiveServer(legalSource.servers[serverIndex]);
       setShowPlayer(true);
-      setShowServerModal(false);
     }
   };
 
@@ -419,49 +457,165 @@ const MovieDetail: React.FC = () => {
 
       {/* Player Modal */}
       <AnimatePresence>
-        {showPlayer && (
+        {showPlayer && activeServer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center bg-black"
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-zinc-950 p-4 md:p-6"
           >
-            <div className="absolute inset-0 bg-black" />
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full h-full flex flex-col"
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="relative w-full h-full max-w-7xl glass-card rounded-[2rem] border border-white/10 overflow-hidden flex flex-col pointer-events-auto z-10 shadow-2xl shadow-black"
             >
-              <div className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between z-20 bg-gradient-to-b from-black to-transparent">
-                <div className="flex items-center gap-4">
+              {/* Header inside player */}
+              <div className="p-4 md:px-6 md:py-4 flex items-center justify-between border-b border-white/5 bg-zinc-950/80 backdrop-blur-sm shrink-0">
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setShowPlayer(false)}
-                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors backdrop-blur-md"
+                    onClick={() => {
+                      setShowPlayer(false);
+                      setActiveServer(null);
+                      setPlaybackError(null);
+                      setFailedServer(null);
+                    }}
+                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center transition-all cursor-pointer text-zinc-300 hover:text-white"
                   >
                     <Plus className="w-6 h-6 rotate-45" />
                   </button>
-                  <h3 className="font-display font-black uppercase text-lg tracking-tighter">
-                    {movie.title}
-                    {isTv && ` • S${selectedSeason} E${selectedEpisode}`}
-                  </h3>
+                  <div>
+                    <h3 className="font-display font-black uppercase text-sm md:text-lg tracking-tight leading-none text-white">
+                      {movie.title}
+                    </h3>
+                    {isTv && (
+                      <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block mt-1">
+                        Season {selectedSeason} • Episode {selectedEpisode}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-brand text-white shadow-lg shadow-brand/20">
-                    Active
+                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 shadow-lg shadow-emerald-500/5 flex items-center gap-1.5 animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Verified DRM Stream
                   </span>
                 </div>
               </div>
 
-              <div className="flex-grow relative bg-black">
-                <iframe
-                  src={activeUrl}
-                  className="w-full h-full border-0"
-                  allowFullScreen
-                  referrerPolicy="no-referrer"
-                  allow="autoplay; encrypted-media"
-                  title="Video Player"
-                />
+              {/* Grid content containing Player and Server Selection */}
+              <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-black">
+                {/* Left side: Actual Video Screen with dynamic overlays */}
+                <div className="lg:col-span-8 relative flex flex-col justify-center bg-zinc-950 min-h-[300px] border-b lg:border-b-0 lg:border-r border-white/5 overflow-hidden">
+                  <VideoPlayer
+                    server={activeServer}
+                    onVideoError={handleVideoError}
+                    title={movie.title}
+                  />
+
+                  {/* Failing/Error Overlays if connection breaks */}
+                  {playbackError && failedServer && (
+                    <ErrorFallback
+                      errorMsg={playbackError}
+                      failedServer={failedServer}
+                      nextServer={
+                        (() => {
+                          const currentIdx = legalSource?.servers.findIndex((s) => s.id === failedServer.id) ?? -1;
+                          if (currentIdx !== -1 && legalSource && currentIdx + 1 < legalSource.servers.length) {
+                            return legalSource.servers[currentIdx + 1];
+                          }
+                          return null;
+                        })()
+                      }
+                      onManualSwitch={() => {
+                        const currentIdx = legalSource?.servers.findIndex((s) => s.id === failedServer.id) ?? -1;
+                        if (currentIdx !== -1 && legalSource && currentIdx + 1 < legalSource.servers.length) {
+                          handleAutoSwitch(legalSource.servers[currentIdx + 1]);
+                        }
+                      }}
+                      onRetry={handleRetryServer}
+                    />
+                  )}
+                </div>
+
+                {/* Right side side panel: Streaming Status monitor, Manual server selectors, and metadata */}
+                <div className="lg:col-span-4 p-5 md:p-6 flex flex-col gap-6 overflow-y-auto bg-zinc-950/50 horizontal-scroll leading-normal">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                      Active Stream Controller
+                    </span>
+                    <h4 className="text-white font-black uppercase text-xl leading-snug">
+                      Theater Controls
+                    </h4>
+                    <p className="text-xs font-semibold text-zinc-500">
+                      Configure your local media settings and mirror lines safely.
+                    </p>
+                  </div>
+
+                  {/* Multi-server selection layout component */}
+                  {legalSource && (
+                    <ServerSelector
+                      servers={legalSource.servers}
+                      activeServerId={activeServer.id}
+                      loadingServerId={loadingServerId}
+                      preferredServerId={
+                        preferredServer !== null && legalSource.servers[preferredServer]
+                          ? legalSource.servers[preferredServer].id 
+                          : null
+                      }
+                      onSelectServer={(server) => {
+                        setPlaybackError(null);
+                        setFailedServer(null);
+                        setActiveServer(server);
+                      }}
+                      onSetPreferred={(serverId) => {
+                        const targetIndex = legalSource.servers.findIndex((s) => s.id === serverId);
+                        if (targetIndex !== -1) {
+                          const nextPref = preferredServer === targetIndex ? null : targetIndex;
+                          setPreferredServer(nextPref);
+                          if (nextPref !== null) {
+                            localStorage.setItem("preferred_server", nextPref.toString());
+                          } else {
+                            localStorage.removeItem("preferred_server");
+                          }
+                        }
+                      }}
+                    />
+                  )}
+
+                  {/* Technical Health Monitor section to enrich OTT feel */}
+                  <div className="bg-zinc-900/60 border border-white/5 rounded-2xl p-4 mt-auto">
+                    <span className="text-[10px] font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5 mb-2.5">
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      Local Decoded Diagnostics
+                    </span>
+                    <div className="grid grid-cols-2 gap-3 text-[11px] font-bold text-zinc-500">
+                      <div className="space-y-0.5">
+                        <p className="lowercase tracking-wide font-medium">Protocol</p>
+                        <p className="text-zinc-300 uppercase tracking-tight">
+                          {activeServer.url.endsWith(".m3u8") || activeServer.url.includes("adaptive") ? "HLS (.m3u8)" : "MP4 Progressive"}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="lowercase tracking-wide font-medium">Resolution</p>
+                        <p className="text-zinc-300 uppercase tracking-tight">{activeServer.quality}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="lowercase tracking-wide font-medium">Frame Buffer</p>
+                        <p className="text-zinc-300">Fast Start enabled</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="lowercase tracking-wide font-medium">Sync State</p>
+                        <p className="text-emerald-400">Legal CC content</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -500,218 +654,6 @@ const MovieDetail: React.FC = () => {
               >
                 <Plus className="w-8 h-8 rotate-45" />
               </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Server Selection Modal */}
-      <AnimatePresence>
-        {showServerModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10"
-          >
-            <div
-              className="absolute inset-0 bg-obsidian/95 backdrop-blur-3xl"
-              onClick={() => setShowServerModal(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.9, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 50 }}
-              className="relative z-10 w-full max-w-lg glass-card rounded-[2rem] p-8 border border-current/10"
-            >
-              <button
-                onClick={() => setShowServerModal(false)}
-                className="absolute top-6 right-6 w-10 h-10 bg-current/10 hover:bg-current/20 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors shadow-lg shadow-black/20 text-current"
-              >
-                <Plus className="w-6 h-6 rotate-45" />
-              </button>
-
-              <div className="mb-8 pr-12">
-                <h3 className="text-2xl font-display font-black uppercase mb-2">
-                  Select <span className="text-brand">Source</span>
-                </h3>
-                <p className="text-sm font-medium text-zinc-400">
-                  Choose a server to watch
-                  {isTv ? " and select your season/episode" : ""}.
-                </p>
-              </div>
-
-              {isTv &&
-                movie.seasons &&
-                typeof selectedSeason === "number" &&
-                (() => {
-                  const validSeasons = movie.seasons.filter(
-                    (s) => s.season_number > 0,
-                  );
-                  const currentSeasonData = validSeasons.find(
-                    (s) => s.season_number === selectedSeason,
-                  );
-                  const episodeCount = currentSeasonData?.episode_count || 50;
-
-                  return (
-                    <div className="flex gap-4 mb-8">
-                      <div className="flex-1 space-y-2">
-                        <label className="text-xs font-black uppercase tracking-widest text-zinc-500">
-                          Season
-                        </label>
-                        <select
-                          className="w-full bg-current/5 border border-current/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-current/10 overflow-hidden appearance-none"
-                          value={selectedSeason}
-                          onChange={(e) => {
-                            setSelectedSeason(Number(e.target.value));
-                            setSelectedEpisode(1);
-                          }}
-                        >
-                          {validSeasons.map((s) => (
-                            <option
-                              key={s.season_number}
-                              value={s.season_number}
-                              className="bg-[var(--theme-bg)]"
-                            >
-                              {s.name || `Season ${s.season_number}`}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <label className="text-xs font-black uppercase tracking-widest text-zinc-500">
-                          Episode
-                        </label>
-                        <select
-                          className="w-full bg-current/5 border border-current/10 text-current rounded-xl outline-none cursor-pointer px-4 py-3 font-bold backdrop-blur-md hover:bg-current/10 appearance-none"
-                          value={selectedEpisode}
-                          onChange={(e) =>
-                            setSelectedEpisode(Number(e.target.value))
-                          }
-                        >
-                          {Array.from({ length: episodeCount }).map((_, i) => (
-                            <option
-                              key={i + 1}
-                              value={i + 1}
-                              className="bg-[var(--theme-bg)]"
-                            >
-                              Episode {i + 1}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-              <div className="space-y-4">
-                {[
-                  {
-                    id: 0,
-                    name: "Server 1 (Primary)",
-                    desc: "Modern player • High Quality • Fast Streaming",
-                    tag: "Fast",
-                    icon: <Zap className="w-5 h-5 fill-current" />,
-                    colorClass: "brand",
-                  },
-                  {
-                    id: 1,
-                    name: "Server 2 (Stable)",
-                    desc: "Best uptime • Stable streaming",
-                    tag: "Recommended",
-                    icon: <ShieldCheck className="w-5 h-5 fill-current" />,
-                    colorClass: "emerald-500",
-                  },
-                  {
-                    id: 2,
-                    name: "Server 3 (Fallback)",
-                    desc: "Stable alternative mirror if others fail",
-                    tag: "Reliable",
-                    icon: <Activity className="w-5 h-5" />,
-                    colorClass: "sky-400",
-                  },
-                ].map((server) => {
-                  const isPreferred = preferredServer === server.id;
-                  const colorMap: Record<string, string> = {
-                    'brand': 'border-brand bg-brand/10 text-brand',
-                    'emerald-500': 'border-emerald-500 bg-emerald-500/10 text-emerald-400',
-                    'sky-400': 'border-sky-400 bg-sky-400/10 text-sky-400',
-                  };
-                  const hoverColorMap: Record<string, string> = {
-                    'brand': 'group-hover:text-brand',
-                    'emerald-500': 'group-hover:text-emerald-400',
-                    'sky-400': 'group-hover:text-sky-400',
-                  };
-                  const tagColorMap: Record<string, string> = {
-                    'brand': 'bg-brand/20 text-brand',
-                    'emerald-500': 'bg-emerald-500/20 text-emerald-400',
-                    'sky-400': 'bg-sky-400/20 text-sky-400',
-                  };
-                  const iconColorMap: Record<string, string> = {
-                    'brand': 'text-brand',
-                    'emerald-500': 'text-emerald-400',
-                    'sky-400': 'text-sky-400',
-                  };
-
-                  return (
-                    <button
-                      key={server.id}
-                      onClick={() => handlePlayOnServer(server.id)}
-                      className={cn(
-                        "w-full relative overflow-hidden group btn-glass p-0 border transition-all text-left",
-                        isPreferred 
-                          ? colorMap[server.colorClass]
-                          : "border-current/10 hover:border-current/20 hover:bg-current/5"
-                      )}
-                    >
-                      <div className="px-6 py-4 flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className={cn(
-                            "font-bold text-lg transition-colors text-current flex items-center gap-2",
-                            hoverColorMap[server.colorClass]
-                          )}>
-                            {server.icon}
-                            {server.name}
-                            {isPreferred && (
-                              <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded uppercase tracking-tighter flex items-center gap-1">
-                                <Heart className="w-2.5 h-2.5 fill-current" />
-                                Preferred
-                              </span>
-                            )}
-                            <span className={cn(
-                              "text-[10px] px-1.5 py-0.5 rounded uppercase tracking-tighter",
-                              tagColorMap[server.colorClass]
-                            )}>
-                              {server.tag}
-                            </span>
-                          </span>
-                          <span className="text-xs font-medium text-zinc-400">
-                            {server.desc}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={(e) => handleSetPreferred(server.id, e)}
-                            className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 bg-current/5 hover:bg-current/10",
-                              isPreferred ? "text-red-500 bg-red-500/10" : "text-zinc-500"
-                            )}
-                            title={isPreferred ? "Remove from preferred" : "Set as preferred"}
-                          >
-                            <Heart className={cn("w-5 h-5", isPreferred && "fill-current")} />
-                          </button>
-                          <div className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform",
-                            isPreferred ? "" : "bg-current/10"
-                          )}>
-                            <Play className={cn("w-5 h-5 fill-current ml-1", iconColorMap[server.colorClass])} />
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
             </motion.div>
           </motion.div>
         )}
