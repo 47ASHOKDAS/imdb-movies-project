@@ -21,12 +21,14 @@ import { cn } from "../../lib/utils";
 import { VideoServer } from "../../services/legalSources";
 
 interface VideoPlayerProps {
+  movieId: string;
   server: VideoServer;
   onVideoError: (errorMsg: string) => void;
   title: string;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  movieId,
   server,
   onVideoError,
   title,
@@ -63,6 +65,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // Watchdog slow loading detection (e.g. Server 1 is intentionally configured to fail or hang)
   useEffect(() => {
+    console.log("movieId:", movieId);
+    console.log("selected source:", server.url);
+    if (!server.url) {
+      console.warn("selected source URL is empty!");
+    }
+
     setIsLoading(true);
     setLoadingStateMsg("Checking best server...");
     setActiveSubtitle("");
@@ -112,14 +120,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
         hlsRef.current.on(Hls.Events.ERROR, (_, data) => {
           if (data.fatal) {
-            onVideoError("Fatal HLS streaming error: failed to resolve content segments.");
+            const hlsErrorMsg = "Fatal HLS streaming error: failed to resolve content segments.";
+            console.log("video error event:", hlsErrorMsg);
+            onVideoError(hlsErrorMsg);
           }
         });
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         // Native HLS for Safari
         setupNativeSource();
       } else {
-        onVideoError("Browser does not support HLS stream decoding natively or via HlsJS.");
+        const decodingError = "Browser does not support HLS stream decoding natively or via HlsJS.";
+        console.log("video error event:", decodingError);
+        onVideoError(decodingError);
       }
     } else {
       // Normal MP4 file
@@ -133,7 +145,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         hlsRef.current = null;
       }
     };
-  }, [server, onVideoError]);
+  }, [movieId, server, onVideoError]);
 
   // Video event listeners
   useEffect(() => {
@@ -191,7 +203,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           case 4: errorDetail = "Legal source file is offline or unreachable."; break;
         }
       }
-      onVideoError(errorDetail + " (" + server.name + ")");
+      const fullError = errorDetail + " (" + server.name + ")";
+      console.log("video error event:", fullError);
+      onVideoError(fullError);
     };
 
     video.addEventListener("play", handlePlay);

@@ -118,6 +118,8 @@ const MovieDetail: React.FC = () => {
       // Fetch legal sources for this movie ID
       const sources = getLegalSourceForMovie(id, mappedData.title);
       setLegalSource(sources);
+      console.log("movieId:", id);
+      console.log("available sources:", sources ? sources.servers : []);
       if (sources && sources.servers && sources.servers.length >= 3) {
         setCustomUrl1(sources.servers[0]?.url || "");
         setCustomUrl2(sources.servers[1]?.url || "");
@@ -197,25 +199,25 @@ const MovieDetail: React.FC = () => {
 
   // Launches the legal multi-server video player workflow
   const handleWatchNow = () => {
-    console.log("clicked movieId:", id);
-    console.log("watch page movieId:", id);
+    console.log("movieId:", id);
+    console.log("available sources:", legalSource ? legalSource.servers : []);
 
     if (legalSource && legalSource.servers && legalSource.servers.length > 0 && legalSource.servers.some(s => s.url)) {
       // Find the user's preferred server if set, or default to general index
       const preferred = preferredServer !== null ? legalSource.servers[preferredServer] : null;
       const initialServer = preferred && preferred.url ? preferred : (legalSource.servers.find(s => s.url) || legalSource.servers[0]);
       
-      console.log("selected video source:", initialServer.url);
+      console.log("selected source:", initialServer.url);
       
       setActiveServer(initialServer);
       setPlaybackError(null);
       setFailedServer(null);
       setShowPlayer(true);
     } else if (watchLink) {
-      console.log("selected video source: External provider");
+      console.log("selected source: External provider (" + watchLink + ")");
       window.open(watchLink, "_blank");
     } else {
-      console.log("selected video source: None");
+      console.log("selected source: None");
       setPlaybackError("Video not available");
       
       const unavailableServer: VideoServer = {
@@ -235,16 +237,45 @@ const MovieDetail: React.FC = () => {
   // Handles custom video error and starts the automatic fallback loop
   const handleVideoError = (errorMsg: string) => {
     console.warn("Playback error handler invoked:", errorMsg);
+    console.log("video error event:", errorMsg);
     if (!activeServer || !legalSource) return;
 
     setFailedServer(activeServer);
-    setPlaybackError(errorMsg);
+
+    // Find the next server for this movieId only
+    const currentIdx = legalSource.servers.findIndex((s) => s.id === activeServer.id) ?? -1;
+    let nextIdx = currentIdx + 1;
+    let nextServer: VideoServer | null = null;
+    while (nextIdx < legalSource.servers.length) {
+      if (legalSource.servers[nextIdx].url) {
+        nextServer = legalSource.servers[nextIdx];
+        break;
+      }
+      nextIdx++;
+    }
+
+    if (nextServer) {
+      console.log(`Fallback: Server ${activeServer.name} failed. Automatically trying next backup server for current movieId ${id}:`, nextServer.name);
+      setPlaybackError(`Server failed: ${errorMsg}. Trying backup server...`);
+      setLoadingServerId(nextServer.id);
+      
+      setTimeout(() => {
+        setLoadingServerId(null);
+        setPlaybackError(null);
+        setFailedServer(null);
+        console.log("selected source:", nextServer.url);
+        setActiveServer(nextServer);
+      }, 2000);
+    } else {
+      console.log("All configured source servers have failed for movieId:", id);
+      setPlaybackError("Video not available");
+    }
   };
 
   // Switches to the next backup server automatically or manually
   const handleAutoSwitch = (nextServer: VideoServer | null) => {
     if (nextServer) {
-      console.log("Auto-switching to backup server:", nextServer.name);
+      console.log("selected source:", nextServer.url);
       setPlaybackError(null);
       setFailedServer(null);
       setActiveServer(nextServer);
@@ -328,7 +359,7 @@ const MovieDetail: React.FC = () => {
     });
 
     const active = updatedServers.find(s => s.url) || updatedServers[0];
-    console.log("selected video source:", active.url || "None");
+    console.log("selected source:", active.url || "None");
     setActiveServer(active);
     setPlaybackError(null);
     setFailedServer(null);
