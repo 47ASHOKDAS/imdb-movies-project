@@ -111,8 +111,8 @@ const EMBED_SERVERS: EmbedServerOption[] = [
     tag: "Auto",
     getUrl: (tmdbId, imdbId, isTv, season, episode) => {
       return isTv
-        ? `https://player.autoembed.co/tv/${tmdbId}/${season}/${episode}`
-        : `https://player.autoembed.co/movie/${tmdbId}`;
+        ? `https://player.autoembed.cc/tv/${tmdbId}/${season}/${episode}`
+        : `https://player.autoembed.cc/movie/${tmdbId}`;
     }
   },
   {
