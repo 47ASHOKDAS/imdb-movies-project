@@ -32,7 +32,8 @@ import {
   LegalMovieSource,
   VideoServer,
   saveCustomServersForMovie,
-  getCustomServersForMovie
+  getCustomServersForMovie,
+  DEMO_LEGAL_MOVIES
 } from "../services/legalSources";
 import { SecureVideoPlayer } from "../components/player/SecureVideoPlayer";
 import ServerSelector from "../components/player/ServerSelector";
@@ -192,10 +193,34 @@ const MovieDetail: React.FC = () => {
   const trailer = movie.videos.results.find(
     (v) => v.type === "Trailer" && v.site === "YouTube",
   );
-  const watchData = movie["watch/providers"].results?.IN;
+  
+  // Safely fallback to other regions if IN is not available
+  const watchData = movie["watch/providers"].results?.IN || 
+                    movie["watch/providers"].results?.US || 
+                    (movie["watch/providers"].results ? Object.values(movie["watch/providers"].results)[0] : null) as any;
   const providers =
     watchData?.flatrate || watchData?.rent || watchData?.buy || [];
   const watchLink = watchData?.link;
+
+  const movieId = id || "";
+
+  // Construct legal video sources mapping dictionary for logging as expected per user request
+  const videoSources: Record<string, any> = {};
+  DEMO_LEGAL_MOVIES.forEach((m) => {
+    videoSources[m.id] = m;
+  });
+  if (legalSource) {
+    videoSources[movieId] = legalSource;
+  }
+
+  const watchProviders = providers;
+
+  // Exact console logs requested by user
+  console.log("movieId:", movieId);
+  console.log("videoSources:", videoSources[movieId]);
+  console.log("providerLinks:", watchProviders);
+
+  const hasPlayableSource = !!(legalSource && legalSource.servers && legalSource.servers.length > 0 && legalSource.servers.some(s => s.url));
 
   // Launches the legal multi-server video player workflow
   const handleWatchNow = () => {
@@ -518,37 +543,93 @@ const MovieDetail: React.FC = () => {
               </p>
             )}
 
-            <div className="flex flex-wrap items-center gap-4 mb-12">
-              <button
-                onClick={handleWatchNow}
-                className="btn-neon min-w-[220px] flex items-center justify-center gap-3 text-lg py-4"
-              >
-                <Play className="w-6 h-6 fill-current" />
-                WATCH NOW
-              </button>
-              <button
-                onClick={() =>
-                  inWatchlist
-                    ? removeFromWatchlist(movie.id)
-                    : addToWatchlist(movie)
-                }
-                className={cn(
-                  "btn-glass min-w-[200px] flex items-center justify-center gap-3 text-sm py-4",
-                  inWatchlist
-                    ? "text-brand border-brand/40 bg-brand/5 scale-[1.02]"
-                    : "",
-                )}
-              >
-                {inWatchlist ? (
-                  <Check className="w-5 h-5" />
-                ) : (
-                  <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />
-                )}
-                {inWatchlist ? "IN WATCHLIST" : "ADD TO LIST"}
-              </button>
-              <button className="btn-glass p-4 rounded-xl aspect-square flex items-center justify-center">
-                <Share2 className="w-5 h-5" />
-              </button>
+            <div className="flex flex-col gap-6 mb-12">
+              {hasPlayableSource ? (
+                <div className="flex flex-wrap items-center gap-4">
+                  <button
+                    onClick={handleWatchNow}
+                    className="btn-neon min-w-[220px] flex items-center justify-center gap-3 text-lg py-4"
+                  >
+                    <Play className="w-6 h-6 fill-current" />
+                    WATCH NOW
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 w-full max-w-2xl">
+                  <div className="flex items-center gap-2 text-zinc-400 font-bold text-xs uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+                    <span>Watch Options</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {providers.length > 0 ? (
+                      providers.slice(0, 4).map((p: any) => (
+                        <button
+                          key={p.provider_id}
+                          onClick={() => {
+                            if (watchLink) {
+                              console.log("selected source: External provider (TMDB Watch Providers link)");
+                              window.open(watchLink, "_blank");
+                            }
+                          }}
+                          className="flex items-center gap-2.5 bg-zinc-900 border border-white/5 hover:border-brand/40 hover:bg-zinc-850 px-4 py-3 rounded-xl transition duration-300 hover:scale-[1.01] text-white cursor-pointer shadow-lg shadow-black/20"
+                        >
+                          {p.logo_path && (
+                            <img
+                              src={`https://image.tmdb.org/t/p/original${p.logo_path}`}
+                              alt={p.provider_name}
+                              className="w-5 h-5 rounded object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          )}
+                          <span className="text-xs font-bold uppercase tracking-wider">
+                            Watch on {p.provider_name}
+                          </span>
+                        </button>
+                      ))
+                    ) : watchLink ? (
+                      <button
+                        onClick={() => window.open(watchLink, "_blank")}
+                        className="flex items-center gap-2.5 bg-zinc-900 border border-white/5 hover:border-brand/40 px-5 py-3 rounded-xl transition duration-300 hover:scale-[1.01] text-white cursor-pointer"
+                      >
+                        <Play className="w-4 h-4 fill-current text-white animate-pulse" />
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          Stream on External Provider
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest bg-zinc-900/40 px-5 py-3 rounded-xl border border-white/5">
+                        No Playable Source or Streaming Provider config found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() =>
+                    inWatchlist
+                      ? removeFromWatchlist(movie.id)
+                      : addToWatchlist(movie)
+                  }
+                  className={cn(
+                    "btn-glass min-w-[200px] flex items-center justify-center gap-3 text-sm py-4",
+                    inWatchlist
+                      ? "text-brand border-brand/40 bg-brand/5 scale-[1.02]"
+                      : "",
+                  )}
+                >
+                  {inWatchlist ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <Plus className="w-5 h-5 group-hover:text-brand transition-colors" />
+                  )}
+                  {inWatchlist ? "IN WATCHLIST" : "ADD TO LIST"}
+                </button>
+                <button className="btn-glass p-4 rounded-xl aspect-square flex items-center justify-center">
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="glass-card rounded-[2rem] p-8 md:p-10 border-current/10 bg-current/5">
