@@ -110,7 +110,37 @@ export const DEMO_LEGAL_MOVIES: LegalMovieSource[] = [
   }
 ];
 
+export function getCustomServersForMovie(id: string): VideoServer[] | null {
+  try {
+    const saved = localStorage.getItem(`custom_servers_${id}`);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error loading custom servers", e);
+  }
+  return null;
+}
+
+export function saveCustomServersForMovie(id: string, servers: VideoServer[]) {
+  try {
+    localStorage.setItem(`custom_servers_${id}`, JSON.stringify(servers));
+  } catch (e) {
+    console.error("Error saving custom servers", e);
+  }
+}
+
 export function getLegalSourceForMovie(id: string, title: string): LegalMovieSource {
+  // Check if user has defined custom servers for this movie
+  const customServers = getCustomServersForMovie(id);
+  if (customServers && customServers.length > 0) {
+    return {
+      id: String(id),
+      title: title,
+      servers: customServers
+    };
+  }
+
   // If matched directly by a demo key
   const matched = DEMO_LEGAL_MOVIES.find(m => m.id === id);
   if (matched) return matched;

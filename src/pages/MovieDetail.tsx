@@ -27,10 +27,17 @@ import SEO from "../components/common/SEO";
 import ErrorMessage from "../components/common/ErrorMessage";
 
 // Safe, legal multi-server custom streaming components
-import { getLegalSourceForMovie, LegalMovieSource, VideoServer } from "../services/legalSources";
+import {
+  getLegalSourceForMovie,
+  LegalMovieSource,
+  VideoServer,
+  saveCustomServersForMovie,
+  getCustomServersForMovie
+} from "../services/legalSources";
 import VideoPlayer from "../components/player/VideoPlayer";
 import ServerSelector from "../components/player/ServerSelector";
 import ErrorFallback from "../components/player/ErrorFallback";
+import { Settings, Info, Save, Undo2, Tv } from "lucide-react";
 
 const MovieDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,6 +66,14 @@ const MovieDetail: React.FC = () => {
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [loadingServerId, setLoadingServerId] = useState<number | null>(null);
   const [failedServer, setFailedServer] = useState<VideoServer | null>(null);
+
+  // Playback control states (Secure direct HTML5 player vs high compatibility embed frames)
+  const [playerMode, setPlayerMode] = useState<'html5' | 'embed'>('html5');
+  const [embedServerIndex, setEmbedServerIndex] = useState<number>(0);
+  const [showCustomServerForm, setShowCustomServerForm] = useState(false);
+  const [customUrl1, setCustomUrl1] = useState("");
+  const [customUrl2, setCustomUrl2] = useState("");
+  const [customUrl3, setCustomUrl3] = useState("");
   
   // Progress Syncing Implementation
   useEffect(() => {
@@ -103,6 +118,11 @@ const MovieDetail: React.FC = () => {
       // Procedurally generate or lookup CC available legal multi-server sources
       const sources = getLegalSourceForMovie(id, mappedData.title);
       setLegalSource(sources);
+      if (sources && sources.servers.length >= 3) {
+        setCustomUrl1(sources.servers[0]?.url || "");
+        setCustomUrl2(sources.servers[1]?.url || "");
+        setCustomUrl3(sources.servers[2]?.url || "");
+      }
 
       const similar = isTv
         ? await tmdbService.getSimilarTv(id)
@@ -220,6 +240,89 @@ const MovieDetail: React.FC = () => {
     setTimeout(() => {
       setActiveServer(reattained);
     }, 100);
+  };
+
+  const getEmbedUrl = () => {
+    if (!movie) return "";
+    const tmdbId = movie.id;
+    const imdbId = movie.imdb_id;
+
+    if (embedServerIndex === 0) {
+      return isTv
+        ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason || 1}/${selectedEpisode || 1}`
+        : `https://vidlink.pro/movie/${tmdbId}`;
+    } else if (embedServerIndex === 1) {
+      return isTv
+        ? `https://vidsrc.me/embed/tv/${tmdbId}/${selectedSeason || 1}/${selectedEpisode || 1}`
+        : imdbId ? `https://vidsrc.me/embed/movie/${imdbId}` : `https://vidsrc.me/embed/movie/${tmdbId}`;
+    } else {
+      return isTv
+        ? `https://vidsrc.pm/embed/tv/${tmdbId}/${selectedSeason || 1}/${selectedEpisode || 1}`
+        : `https://vidsrc.pm/embed/movie/${tmdbId}`;
+    }
+  };
+
+  const handleSaveCustomServers = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!movie || !legalSource) return;
+
+    const updatedServers: VideoServer[] = [
+      {
+        id: 1,
+        name: "Server 1 (Primary - Custom CDN)",
+        url: customUrl1,
+        desc: "Custom CDN stream loaded via secure local storage.",
+        tag: "Primary",
+        quality: "1080p Direct",
+        isFailing: !customUrl1 // If empty, mark failing to trigger failover demo
+      },
+      {
+        id: 2,
+        name: "Server 2 (Stable - Custom Backup)",
+        url: customUrl2 || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+        desc: "Cached direct MP4 streaming segment. High compatibility.",
+        tag: "Backup 1",
+        quality: "1080p MP4",
+        isFailing: !customUrl2
+      },
+      {
+        id: 3,
+        name: "Server 3 (Fallback - Adaptive HLS)",
+        url: customUrl3 || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+        desc: "Adaptive Live feed stream for cross-device playback.",
+        tag: "Backup 2",
+        quality: "Auto HLS"
+      }
+    ];
+
+    saveCustomServersForMovie(movie.id.toString(), updatedServers);
+    
+    setLegalSource({
+      ...legalSource,
+      servers: updatedServers
+    });
+
+    const active = updatedServers.find(s => s.url) || updatedServers[0];
+    setActiveServer(active);
+    setPlaybackError(null);
+    setFailedServer(null);
+    setShowCustomServerForm(false);
+  };
+
+  const handleResetDefaultServers = () => {
+    if (!movie) return;
+    localStorage.removeItem(`custom_servers_${movie.id}`);
+    const sources = getLegalSourceForMovie(movie.id.toString(), movie.title);
+    setLegalSource(sources);
+    if (sources && sources.servers.length >= 3) {
+      setCustomUrl1(sources.servers[0]?.url || "");
+      setCustomUrl2(sources.servers[1]?.url || "");
+      setCustomUrl3(sources.servers[2]?.url || "");
+      setActiveServer(sources.servers[0]);
+    }
+    setPlaybackError(null);
+    setFailedServer(null);
+    setShowCustomServerForm(false);
   };
 
   const handlePlayOnServer = (serverIndex: number) => {
@@ -509,33 +612,46 @@ const MovieDetail: React.FC = () => {
               <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-black">
                 {/* Left side: Actual Video Screen with dynamic overlays */}
                 <div className="lg:col-span-8 relative flex flex-col justify-center bg-zinc-950 min-h-[300px] border-b lg:border-b-0 lg:border-r border-white/5 overflow-hidden">
-                  <VideoPlayer
-                    server={activeServer}
-                    onVideoError={handleVideoError}
-                    title={movie.title}
-                  />
+                  {playerMode === "html5" ? (
+                    <>
+                      <VideoPlayer
+                        server={activeServer}
+                        onVideoError={handleVideoError}
+                        title={movie.title}
+                      />
 
-                  {/* Failing/Error Overlays if connection breaks */}
-                  {playbackError && failedServer && (
-                    <ErrorFallback
-                      errorMsg={playbackError}
-                      failedServer={failedServer}
-                      nextServer={
-                        (() => {
-                          const currentIdx = legalSource?.servers.findIndex((s) => s.id === failedServer.id) ?? -1;
-                          if (currentIdx !== -1 && legalSource && currentIdx + 1 < legalSource.servers.length) {
-                            return legalSource.servers[currentIdx + 1];
+                      {/* Failing/Error Overlays if connection breaks */}
+                      {playbackError && failedServer && (
+                        <ErrorFallback
+                          errorMsg={playbackError}
+                          failedServer={failedServer}
+                          nextServer={
+                            (() => {
+                              const currentIdx = legalSource?.servers.findIndex((s) => s.id === failedServer.id) ?? -1;
+                              if (currentIdx !== -1 && legalSource && currentIdx + 1 < legalSource.servers.length) {
+                                return legalSource.servers[currentIdx + 1];
+                              }
+                              return null;
+                            })()
                           }
-                          return null;
-                        })()
-                      }
-                      onManualSwitch={() => {
-                        const currentIdx = legalSource?.servers.findIndex((s) => s.id === failedServer.id) ?? -1;
-                        if (currentIdx !== -1 && legalSource && currentIdx + 1 < legalSource.servers.length) {
-                          handleAutoSwitch(legalSource.servers[currentIdx + 1]);
-                        }
-                      }}
-                      onRetry={handleRetryServer}
+                          onManualSwitch={() => {
+                            const currentIdx = legalSource?.servers.findIndex((s) => s.id === failedServer.id) ?? -1;
+                            if (currentIdx !== -1 && legalSource && currentIdx + 1 < legalSource.servers.length) {
+                              handleAutoSwitch(legalSource.servers[currentIdx + 1]);
+                            }
+                          }}
+                          onRetry={handleRetryServer}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <iframe
+                      src={getEmbedUrl()}
+                      className="w-full h-full border-0 absolute inset-0 bg-black"
+                      allowFullScreen
+                      referrerPolicy="no-referrer"
+                      allow="autoplay; encrypted-media"
+                      title="Web Mirror Video Player"
                     />
                   )}
                 </div>
@@ -554,35 +670,235 @@ const MovieDetail: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Multi-server selection layout component */}
-                  {legalSource && (
-                    <ServerSelector
-                      servers={legalSource.servers}
-                      activeServerId={activeServer.id}
-                      loadingServerId={loadingServerId}
-                      preferredServerId={
-                        preferredServer !== null && legalSource.servers[preferredServer]
-                          ? legalSource.servers[preferredServer].id 
-                          : null
-                      }
-                      onSelectServer={(server) => {
-                        setPlaybackError(null);
-                        setFailedServer(null);
-                        setActiveServer(server);
-                      }}
-                      onSetPreferred={(serverId) => {
-                        const targetIndex = legalSource.servers.findIndex((s) => s.id === serverId);
-                        if (targetIndex !== -1) {
-                          const nextPref = preferredServer === targetIndex ? null : targetIndex;
-                          setPreferredServer(nextPref);
-                          if (nextPref !== null) {
-                            localStorage.setItem("preferred_server", nextPref.toString());
-                          } else {
-                            localStorage.removeItem("preferred_server");
+                  {/* Mode switcher tabs */}
+                  <div className="grid grid-cols-2 bg-zinc-900/80 p-1 rounded-xl border border-white/5 shrink-0">
+                    <button
+                      onClick={() => setPlayerMode("html5")}
+                      className={cn(
+                        "text-center py-2 px-2 text-[10px] font-black uppercase rounded-lg cursor-pointer transition-all",
+                        playerMode === "html5"
+                          ? "bg-brand text-white shadow-lg shadow-brand/20"
+                          : "text-zinc-400 hover:text-white"
+                      )}
+                    >
+                      Secure HTML5 Player
+                    </button>
+                    <button
+                      onClick={() => setPlayerMode("embed")}
+                      className={cn(
+                        "text-center py-2 px-2 text-[10px] font-black uppercase rounded-lg cursor-pointer transition-all",
+                        playerMode === "embed"
+                          ? "bg-zinc-800 text-zinc-100 border border-white/10"
+                          : "text-zinc-400 hover:text-white"
+                      )}
+                    >
+                      Legacy Web Mirrors
+                    </button>
+                  </div>
+
+                  {/* Season & Episode controls only for TV series inside the player sidebar */}
+                  {isTv && movie.seasons && (
+                    <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
+                      <span className="text-[10px] font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5">
+                        <Tv className="w-3.5 h-3.5 text-brand" />
+                        Episode Navigator
+                      </span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Season</label>
+                          <select
+                            className="w-full bg-zinc-950 border border-white/10 text-zinc-250 rounded-xl outline-none cursor-pointer px-3 py-2 text-xs font-bold hover:bg-zinc-900 transition-colors"
+                            value={selectedSeason}
+                            onChange={(e) => {
+                              setSelectedSeason(Number(e.target.value));
+                              setSelectedEpisode(1);
+                            }}
+                          >
+                            {movie.seasons
+                              .filter((s) => s.season_number > 0)
+                              .map((s) => (
+                                <option key={s.season_number} value={s.season_number} className="bg-zinc-950">
+                                  {s.name || `Season ${s.season_number}`}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Episode</label>
+                          <select
+                            className="w-full bg-zinc-950 border border-white/10 text-zinc-250 rounded-xl outline-none cursor-pointer px-3 py-2 text-xs font-bold hover:bg-zinc-900 transition-colors"
+                            value={selectedEpisode}
+                            onChange={(e) => setSelectedEpisode(Number(e.target.value))}
+                          >
+                            {Array.from({
+                              length:
+                                movie.seasons.find((s) => s.season_number === selectedSeason)
+                                  ?.episode_count || 32,
+                            }).map((_, i) => (
+                              <option key={i + 1} value={i + 1} className="bg-zinc-950">
+                                Episode {i + 1}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* HTML5 Selector Panel */}
+                  {playerMode === "html5" && showCustomServerForm ? (
+                    <form onSubmit={handleSaveCustomServers} className="bg-zinc-900/60 border border-white/5 rounded-2xl p-4 space-y-4">
+                      <span className="text-[10px] font-black uppercase text-brand tracking-wider flex items-center gap-1.5">
+                        <Settings className="w-3.5 h-3.5 animate-spin-slow" />
+                        Configure Stream CDN URLs
+                      </span>
+                      
+                      <div className="space-y-3 text-xs">
+                        <div className="space-y-1">
+                          <label className="font-semibold text-zinc-400">Server 1 (Primary Direct Stream)</label>
+                          <input
+                            type="text"
+                            placeholder="Direct MP4 or HLS .m3u8 Url"
+                            value={customUrl1}
+                            onChange={(e) => setCustomUrl1(e.target.value)}
+                            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-zinc-100 placeholder-zinc-700 outline-none focus:border-brand/50 transition-colors font-mono text-[11px]"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-semibold text-zinc-400">Server 2 (Backup Stream Endpoint)</label>
+                          <input
+                            type="text"
+                            placeholder="Fallback direct stream url"
+                            value={customUrl2}
+                            onChange={(e) => setCustomUrl2(e.target.value)}
+                            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-zinc-100 placeholder-zinc-700 outline-none focus:border-brand/50 transition-colors font-mono text-[11px]"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-semibold text-zinc-400">Server 3 (Fallback Adaptive Feed)</label>
+                          <input
+                            type="text"
+                            placeholder="Adaptive backup video url"
+                            value={customUrl3}
+                            onChange={(e) => setCustomUrl3(e.target.value)}
+                            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-zinc-100 placeholder-zinc-700 outline-none focus:border-brand/50 transition-colors font-mono text-[11px]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 mt-4">
+                        <button
+                          type="submit"
+                          className="py-2.5 px-3 bg-brand text-white rounded-xl text-xs font-bold cursor-pointer hover:opacity-90 flex items-center justify-center gap-1.5 shadow-lg shadow-brand/10 transition-opacity"
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          Save Feeds
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomServerForm(false)}
+                          className="py-2.5 px-3 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleResetDefaultServers}
+                        className="w-full py-1.5 text-[10px] font-bold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider flex items-center justify-center gap-1"
+                      >
+                        <Undo2 className="w-3 h-3" />
+                        Reset Default Streams
+                      </button>
+                    </form>
+                  ) : playerMode === "html5" ? (
+                    <>
+                      {/* Multi-server selection layout component */}
+                      {legalSource && (
+                        <ServerSelector
+                          servers={legalSource.servers}
+                          activeServerId={activeServer.id}
+                          loadingServerId={loadingServerId}
+                          preferredServerId={
+                            preferredServer !== null && legalSource.servers[preferredServer]
+                              ? legalSource.servers[preferredServer].id 
+                              : null
                           }
-                        }
-                      }}
-                    />
+                          onSelectServer={(server) => {
+                            setPlaybackError(null);
+                            setFailedServer(null);
+                            setActiveServer(server);
+                          }}
+                          onSetPreferred={(serverId) => {
+                            const targetIndex = legalSource.servers.findIndex((s) => s.id === serverId);
+                            if (targetIndex !== -1) {
+                              const nextPref = preferredServer === targetIndex ? null : targetIndex;
+                              setPreferredServer(nextPref);
+                              if (nextPref !== null) {
+                                localStorage.setItem("preferred_server", nextPref.toString());
+                              } else {
+                                localStorage.removeItem("preferred_server");
+                              }
+                            }
+                          }}
+                        />
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setShowCustomServerForm(true);
+                        }}
+                        className="w-full py-3 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 rounded-xl border border-white/5 flex items-center justify-center gap-2 cursor-pointer transition-all text-xs font-bold"
+                      >
+                        <Settings className="w-4 h-4 text-brand" />
+                        Configure Direct Streams / Custom CDN
+                      </button>
+                    </>
+                  ) : null}
+
+                  {/* Legacy Mirror Selector Panel */}
+                  {playerMode === "embed" && (
+                    <div className="space-y-3">
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">
+                        Select Mirror Server Connection
+                      </span>
+                      <div className="space-y-2.5">
+                        {[
+                          { id: 0, name: "Mirror Server 1 (Vidlink)", desc: "Very fast, responsive direct streaming", tag: "Fastest" },
+                          { id: 1, name: "Mirror Server 2 (Vidsrc.me)", desc: "Long-standing high uptime server", tag: "Stable" },
+                          { id: 2, name: "Mirror Server 3 (Vidsrc.pm)", desc: "Alternative backup mirror server", tag: "Backup" }
+                        ].map((srv) => (
+                          <button
+                            key={srv.id}
+                            onClick={() => {
+                              setEmbedServerIndex(srv.id);
+                            }}
+                            className={cn(
+                              "w-full px-4 py-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer",
+                              embedServerIndex === srv.id
+                                ? "border-brand bg-brand/10 text-brand"
+                                : "border-white/5 bg-zinc-900/40 hover:bg-zinc-900/70 text-zinc-300"
+                            )}
+                          >
+                            <div>
+                              <p className="font-bold text-xs">{srv.name}</p>
+                              <p className="text-[10px] text-zinc-500 font-medium mt-0.5">{srv.desc}</p>
+                            </div>
+                            <span className={cn(
+                              "text-[9px] font-bold uppercase px-2 py-0.5 rounded",
+                              embedServerIndex === srv.id
+                                ? "bg-brand/20 text-brand"
+                                : "bg-white/5 text-zinc-400"
+                            )}>
+                              {srv.tag}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {/* Technical Health Monitor section to enrich OTT feel */}
@@ -592,26 +908,36 @@ const MovieDetail: React.FC = () => {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
-                      Local Decoded Diagnostics
+                      Diagnostics Monitor
                     </span>
                     <div className="grid grid-cols-2 gap-3 text-[11px] font-bold text-zinc-500">
                       <div className="space-y-0.5">
                         <p className="lowercase tracking-wide font-medium">Protocol</p>
                         <p className="text-zinc-300 uppercase tracking-tight">
-                          {activeServer.url.endsWith(".m3u8") || activeServer.url.includes("adaptive") ? "HLS (.m3u8)" : "MP4 Progressive"}
+                          {playerMode === "embed"
+                            ? "Iframe sandbox"
+                            : activeServer.url.endsWith(".m3u8") || activeServer.url.includes("adaptive")
+                            ? "HLS (.m3u8)"
+                            : "MP4 Progressive"}
                         </p>
                       </div>
                       <div className="space-y-0.5">
                         <p className="lowercase tracking-wide font-medium">Resolution</p>
-                        <p className="text-zinc-300 uppercase tracking-tight">{activeServer.quality}</p>
+                        <p className="text-zinc-300 uppercase tracking-tight">
+                          {playerMode === "embed" ? "1085p Dynamic" : activeServer.quality}
+                        </p>
                       </div>
                       <div className="space-y-0.5">
-                        <p className="lowercase tracking-wide font-medium">Frame Buffer</p>
-                        <p className="text-zinc-300">Fast Start enabled</p>
+                        <p className="lowercase tracking-wide font-medium">Engine Mode</p>
+                        <p className="text-zinc-300">
+                          {playerMode === "embed" ? "Direct Mirror" : "HTML5 Failover"}
+                        </p>
                       </div>
                       <div className="space-y-0.5">
                         <p className="lowercase tracking-wide font-medium">Sync State</p>
-                        <p className="text-emerald-400">Legal CC content</p>
+                        <p className={playerMode === "embed" ? "text-amber-400" : "text-emerald-400"}>
+                          {playerMode === "embed" ? "Cloud Hybrid feed" : "Direct stream"}
+                        </p>
                       </div>
                     </div>
                   </div>
