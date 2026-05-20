@@ -234,27 +234,29 @@ const MovieDetail: React.FC = () => {
       
       console.log("selected source:", initialServer.url);
       
+      setPlayerMode("html5");
       setActiveServer(initialServer);
       setPlaybackError(null);
       setFailedServer(null);
       setShowPlayer(true);
-    } else if (watchLink) {
-      console.log("selected source: External provider (" + watchLink + ")");
-      window.open(watchLink, "_blank");
     } else {
-      console.log("selected source: None");
-      setPlaybackError("Video not available");
+      console.log("selected source: Embed Mirror (vidsrc/vidlink)");
+      setPlayerMode("embed");
+      setEmbedServerIndex(0);
       
-      const unavailableServer: VideoServer = {
-        id: -1,
-        name: "No Source Configured",
-        url: "",
-        desc: "No video source configuration could be found for this title id.",
-        tag: "None",
-        quality: "N/A"
+      const defaultMirrorServer: VideoServer = {
+        id: 0,
+        name: "Mirror Server 1 (Vidlink)",
+        url: isTv
+          ? `https://vidlink.pro/tv/${id}/${selectedSeason || 1}/${selectedEpisode || 1}`
+          : `https://vidlink.pro/movie/${id}`,
+        desc: "Very fast, responsive direct streaming",
+        tag: "Fastest",
+        quality: "1080p Dynamic"
       };
-      setActiveServer(unavailableServer);
-      setFailedServer(unavailableServer);
+      setActiveServer(defaultMirrorServer);
+      setPlaybackError(null);
+      setFailedServer(null);
       setShowPlayer(true);
     }
   };
@@ -544,18 +546,18 @@ const MovieDetail: React.FC = () => {
             )}
 
             <div className="flex flex-col gap-6 mb-12">
-              {hasPlayableSource ? (
-                <div className="flex flex-wrap items-center gap-4">
-                  <button
-                    onClick={handleWatchNow}
-                    className="btn-neon min-w-[220px] flex items-center justify-center gap-3 text-lg py-4"
-                  >
-                    <Play className="w-6 h-6 fill-current" />
-                    WATCH NOW
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3 w-full max-w-2xl">
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  onClick={handleWatchNow}
+                  className="btn-neon min-w-[220px] flex items-center justify-center gap-3 text-lg py-4"
+                >
+                  <Play className="w-6 h-6 fill-current" />
+                  WATCH NOW
+                </button>
+              </div>
+
+              {!hasPlayableSource && (
+                <div className="flex flex-col gap-3 w-full max-w-2xl mt-2">
                   <div className="flex items-center gap-2 text-zinc-400 font-bold text-xs uppercase tracking-wider">
                     <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                     <span>Watch Options</span>
@@ -598,7 +600,7 @@ const MovieDetail: React.FC = () => {
                       </button>
                     ) : (
                       <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest bg-zinc-900/40 px-5 py-3 rounded-xl border border-white/5">
-                        No Playable Source or Streaming Provider config found
+                        No Streaming Provider config found
                       </div>
                     )}
                   </div>
