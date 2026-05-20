@@ -40,6 +40,127 @@ import ServerSelector from "../components/player/ServerSelector";
 import ErrorFallback from "../components/player/ErrorFallback";
 import { Settings, Info, Save, Undo2, Tv } from "lucide-react";
 
+interface EmbedServerOption {
+  id: number;
+  name: string;
+  desc: string;
+  tag: string;
+  getUrl: (tmdbId: number, imdbId: string, isTv: boolean, season: number, episode: number) => string;
+}
+
+const EMBED_SERVERS: EmbedServerOption[] = [
+  {
+    id: 0,
+    name: "VidSrc Connection",
+    desc: "Long-standing stable multi-mirror stream provider",
+    tag: "Stable",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`
+        : `https://vidsrc.to/embed/movie/${tmdbId}`;
+    }
+  },
+  {
+    id: 1,
+    name: "2Embed API",
+    desc: "Highly compatible multi-language regional proxy",
+    tag: "Multi-Lang",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://www.2embed.cc/embedtv/${tmdbId}&s=${season}&e=${episode}`
+        : `https://www.2embed.cc/embed/${tmdbId}`;
+    }
+  },
+  {
+    id: 2,
+    name: "SuperEmbed Node",
+    desc: "Automated low-latency server load-balancing endpoint",
+    tag: "HD Quality",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://multiembed.mov/?video_id=${tmdbId}&s=${season}&e=${episode}`
+        : `https://multiembed.mov/?video_id=${tmdbId}`;
+    }
+  },
+  {
+    id: 3,
+    name: "MultiEmbed Mirror",
+    desc: "Consolidated indexer mapping multi-host networks",
+    tag: "Multi-Source",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://multiembed.mov/?video_id=${tmdbId}&s=${season}&e=${episode}`
+        : `https://multiembed.mov/?video_id=${tmdbId}`;
+    }
+  },
+  {
+    id: 4,
+    name: "SmashyStream API",
+    desc: "Fast streaming with automated fallback mirrors",
+    tag: "Unbuffered",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}`
+        : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`;
+    }
+  },
+  {
+    id: 5,
+    name: "AutoEmbed Feed",
+    desc: "Adaptive bandwidth mirror and backup feed provider",
+    tag: "Auto",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://player.autoembed.co/tv/${tmdbId}/${season}/${episode}`
+        : `https://player.autoembed.co/movie/${tmdbId}`;
+    }
+  },
+  {
+    id: 6,
+    name: "DBGO Pipeline",
+    desc: "Dedicated high-performance buffer-free pipeline",
+    tag: "Direct Feed",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://sys.dbgo.co/tv/${tmdbId}/${season}/${episode}`
+        : `https://sys.dbgo.co/movie/${tmdbId}`;
+    }
+  },
+  {
+    id: 7,
+    name: "MovieBox API Node",
+    desc: "MovieBox style responsive frame gateway node",
+    tag: "Box API",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://vidsrc.pro/embed/tv/${tmdbId}/${season}/${episode}`
+        : `https://vidsrc.pro/embed/movie/${tmdbId}`;
+    }
+  },
+  {
+    id: 8,
+    name: "Generic Wrapper",
+    desc: "Fallback proxy wrapper parsing IMDB indices",
+    tag: "Proxy Feed",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://vidsrc.pm/embed/tv/${tmdbId}/${season}/${episode}`
+        : imdbId ? `https://vidsrc.pm/embed/movie/${imdbId}` : `https://vidsrc.pm/embed/movie/${tmdbId}`;
+    }
+  },
+  {
+    id: 9,
+    name: "Vidlink Mirror",
+    desc: "Lightning fast responsive video feed mirror",
+    tag: "Fastest",
+    getUrl: (tmdbId, imdbId, isTv, season, episode) => {
+      return isTv
+        ? `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}`
+        : `https://vidlink.pro/movie/${tmdbId}`;
+    }
+  }
+];
+
 const MovieDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
@@ -225,19 +346,18 @@ const MovieDetail: React.FC = () => {
   // Launches the legal multi-server video player workflow
   const handleWatchNow = () => {
     console.log("movieId:", id);
-    console.log("selected source: Embed Mirror (vidsrc/vidlink)");
+    console.log("selected source: Embed Mirror (vidsrc/vidlink/custom servers)");
     setPlayerMode("embed");
     setEmbedServerIndex(0);
     
+    const defaultSrv = EMBED_SERVERS[0];
     const defaultMirrorServer: VideoServer = {
-      id: 0,
-      name: "Mirror Server 1 (Vidlink)",
-      url: isTv
-        ? `https://vidlink.pro/tv/${id}/${selectedSeason || 1}/${selectedEpisode || 1}`
-        : `https://vidlink.pro/movie/${id}`,
-      desc: "Very fast, responsive direct streaming",
-      tag: "Fastest",
-      quality: "1080p Dynamic"
+      id: defaultSrv.id,
+      name: defaultSrv.name,
+      url: defaultSrv.getUrl(movie ? movie.id : Number(id), movie?.imdb_id || "", isTv, Number(selectedSeason) || 1, Number(selectedEpisode) || 1),
+      desc: defaultSrv.desc,
+      tag: defaultSrv.tag,
+      quality: "1085p Dynamic"
     };
     setActiveServer(defaultMirrorServer);
     setPlaybackError(null);
@@ -311,20 +431,8 @@ const MovieDetail: React.FC = () => {
     if (!movie) return "";
     const tmdbId = movie.id;
     const imdbId = movie.imdb_id;
-
-    if (embedServerIndex === 0) {
-      return isTv
-        ? `https://vidlink.pro/tv/${tmdbId}/${selectedSeason || 1}/${selectedEpisode || 1}`
-        : `https://vidlink.pro/movie/${tmdbId}`;
-    } else if (embedServerIndex === 1) {
-      return isTv
-        ? `https://vidsrc.me/embed/tv/${tmdbId}/${selectedSeason || 1}/${selectedEpisode || 1}`
-        : imdbId ? `https://vidsrc.me/embed/movie/${imdbId}` : `https://vidsrc.me/embed/movie/${tmdbId}`;
-    } else {
-      return isTv
-        ? `https://vidsrc.pm/embed/tv/${tmdbId}/${selectedSeason || 1}/${selectedEpisode || 1}`
-        : `https://vidsrc.pm/embed/movie/${tmdbId}`;
-    }
+    const srv = EMBED_SERVERS.find(s => s.id === embedServerIndex) || EMBED_SERVERS[0];
+    return srv.getUrl(tmdbId, imdbId || "", isTv, Number(selectedSeason) || 1, Number(selectedEpisode) || 1);
   };
 
   const handleSaveCustomServers = (e: React.FormEvent) => {
@@ -937,33 +1045,35 @@ const MovieDetail: React.FC = () => {
                   {/* Legacy Mirror Selector Panel */}
                   {playerMode === "embed" && (
                     <div className="space-y-3">
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">
+                      <span className="text-[10px] font-bold text-cyan-400 font-mono uppercase tracking-[0.2em] block">
                         Select Mirror Server Connection
                       </span>
-                      <div className="space-y-2.5">
-                        {[
-                          { id: 0, name: "Mirror Server 1 (Vidlink)", desc: "Very fast, responsive direct streaming", tag: "Fastest" },
-                          { id: 1, name: "Mirror Server 2 (Vidsrc.me)", desc: "Long-standing high uptime server", tag: "Stable" },
-                          { id: 2, name: "Mirror Server 3 (Vidsrc.pm)", desc: "Alternative backup mirror server", tag: "Backup" }
-                        ].map((srv) => (
+                      <div className="space-y-2.5 max-h-[350px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-zinc-850 scrollbar-track-transparent">
+                        {EMBED_SERVERS.map((srv) => (
                           <button
                             key={srv.id}
                             onClick={() => {
                               setEmbedServerIndex(srv.id);
                             }}
                             className={cn(
-                              "w-full px-4 py-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer",
+                              "w-full px-4 py-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer duration-200 hover:scale-[1.01]",
                               embedServerIndex === srv.id
-                                ? "border-brand bg-brand/10 text-brand"
-                                : "border-white/5 bg-zinc-900/40 hover:bg-zinc-900/70 text-zinc-300"
+                                ? "border-brand bg-brand/15 text-brand shadow-[0_0_15px_rgba(0,243,255,0.08)]"
+                                : "border-white/5 bg-zinc-900/40 hover:bg-zinc-900/80 text-zinc-300"
                             )}
                           >
-                            <div>
-                              <p className="font-bold text-xs">{srv.name}</p>
-                              <p className="text-[10px] text-zinc-500 font-medium mt-0.5">{srv.desc}</p>
+                            <div className="flex-grow pr-3">
+                              <p className="font-bold text-xs flex items-center gap-1.5">
+                                <span className={cn(
+                                  "w-1.5 h-1.5 rounded-full",
+                                  embedServerIndex === srv.id ? "bg-brand animate-pulse" : "bg-zinc-600"
+                                )} />
+                                {srv.name}
+                              </p>
+                              <p className="text-[10px] text-zinc-500 font-medium mt-0.5 line-clamp-1">{srv.desc}</p>
                             </div>
                             <span className={cn(
-                              "text-[9px] font-bold uppercase px-2 py-0.5 rounded",
+                              "text-[9px] font-bold uppercase px-2 py-0.5 rounded tracking-wider shrink-0 font-mono",
                               embedServerIndex === srv.id
                                 ? "bg-brand/20 text-brand"
                                 : "bg-white/5 text-zinc-400"
