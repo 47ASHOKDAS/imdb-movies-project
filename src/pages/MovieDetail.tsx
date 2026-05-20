@@ -115,13 +115,17 @@ const MovieDetail: React.FC = () => {
         : data;
       setMovie(mappedData);
 
-      // Procedurally generate or lookup CC available legal multi-server sources
+      // Fetch legal sources for this movie ID
       const sources = getLegalSourceForMovie(id, mappedData.title);
       setLegalSource(sources);
-      if (sources && sources.servers.length >= 3) {
+      if (sources && sources.servers && sources.servers.length >= 3) {
         setCustomUrl1(sources.servers[0]?.url || "");
         setCustomUrl2(sources.servers[1]?.url || "");
         setCustomUrl3(sources.servers[2]?.url || "");
+      } else {
+        setCustomUrl1("");
+        setCustomUrl2("");
+        setCustomUrl3("");
       }
 
       const similar = isTv
@@ -193,19 +197,38 @@ const MovieDetail: React.FC = () => {
 
   // Launches the legal multi-server video player workflow
   const handleWatchNow = () => {
-    if (legalSource && legalSource.servers.length > 0) {
+    console.log("clicked movieId:", id);
+    console.log("watch page movieId:", id);
+
+    if (legalSource && legalSource.servers && legalSource.servers.length > 0 && legalSource.servers.some(s => s.url)) {
       // Find the user's preferred server if set, or default to general index
       const preferred = preferredServer !== null ? legalSource.servers[preferredServer] : null;
-      const initialServer = preferred || legalSource.servers[0];
+      const initialServer = preferred && preferred.url ? preferred : (legalSource.servers.find(s => s.url) || legalSource.servers[0]);
+      
+      console.log("selected video source:", initialServer.url);
       
       setActiveServer(initialServer);
       setPlaybackError(null);
       setFailedServer(null);
       setShowPlayer(true);
     } else if (watchLink) {
+      console.log("selected video source: External provider");
       window.open(watchLink, "_blank");
     } else {
-      alert("No ID found for this movie. Unable to play.");
+      console.log("selected video source: None");
+      setPlaybackError("Video not available");
+      
+      const unavailableServer: VideoServer = {
+        id: -1,
+        name: "No Source Configured",
+        url: "",
+        desc: "No video source configuration could be found for this title id.",
+        tag: "None",
+        quality: "N/A"
+      };
+      setActiveServer(unavailableServer);
+      setFailedServer(unavailableServer);
+      setShowPlayer(true);
     }
   };
 
@@ -264,7 +287,7 @@ const MovieDetail: React.FC = () => {
 
   const handleSaveCustomServers = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!movie || !legalSource) return;
+    if (!movie) return;
 
     const updatedServers: VideoServer[] = [
       {
@@ -274,13 +297,13 @@ const MovieDetail: React.FC = () => {
         desc: "Custom CDN stream loaded via secure local storage.",
         tag: "Primary",
         quality: "1080p Direct",
-        isFailing: !customUrl1 // If empty, mark failing to trigger failover demo
+        isFailing: !customUrl1
       },
       {
         id: 2,
         name: "Server 2 (Stable - Custom Backup)",
-        url: customUrl2 || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-        desc: "Cached direct MP4 streaming segment. High compatibility.",
+        url: customUrl2,
+        desc: "Configured backup streaming segment.",
         tag: "Backup 1",
         quality: "1080p MP4",
         isFailing: !customUrl2
@@ -288,21 +311,24 @@ const MovieDetail: React.FC = () => {
       {
         id: 3,
         name: "Server 3 (Fallback - Adaptive HLS)",
-        url: customUrl3 || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-        desc: "Adaptive Live feed stream for cross-device playback.",
+        url: customUrl3,
+        desc: "Adaptive backup stream for cross-device playback.",
         tag: "Backup 2",
-        quality: "Auto HLS"
+        quality: "Auto HLS",
+        isFailing: !customUrl3
       }
     ];
 
     saveCustomServersForMovie(movie.id.toString(), updatedServers);
     
     setLegalSource({
-      ...legalSource,
+      id: movie.id.toString(),
+      title: movie.title,
       servers: updatedServers
     });
 
     const active = updatedServers.find(s => s.url) || updatedServers[0];
+    console.log("selected video source:", active.url || "None");
     setActiveServer(active);
     setPlaybackError(null);
     setFailedServer(null);
@@ -314,11 +340,16 @@ const MovieDetail: React.FC = () => {
     localStorage.removeItem(`custom_servers_${movie.id}`);
     const sources = getLegalSourceForMovie(movie.id.toString(), movie.title);
     setLegalSource(sources);
-    if (sources && sources.servers.length >= 3) {
+    if (sources && sources.servers && sources.servers.length >= 3) {
       setCustomUrl1(sources.servers[0]?.url || "");
       setCustomUrl2(sources.servers[1]?.url || "");
       setCustomUrl3(sources.servers[2]?.url || "");
       setActiveServer(sources.servers[0]);
+    } else {
+      setCustomUrl1("");
+      setCustomUrl2("");
+      setCustomUrl3("");
+      setActiveServer(null);
     }
     setPlaybackError(null);
     setFailedServer(null);
@@ -614,14 +645,34 @@ const MovieDetail: React.FC = () => {
                 <div className="lg:col-span-8 relative flex flex-col justify-center bg-zinc-950 min-h-[300px] border-b lg:border-b-0 lg:border-r border-white/5 overflow-hidden">
                   {playerMode === "html5" ? (
                     <>
-                      <VideoPlayer
-                        server={activeServer}
-                        onVideoError={handleVideoError}
-                        title={movie.title}
-                      />
+                      {/* Only render VideoPlayer if a valid url exists */}
+                      {activeServer && activeServer.url ? (
+                        <VideoPlayer
+                          server={activeServer}
+                          onVideoError={handleVideoError}
+                          title={movie.title}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 z-40 bg-zinc-950 flex flex-col justify-center items-center px-6 py-8 text-center backdrop-blur-md select-none">
+                          <div className="max-w-xl w-full flex flex-col items-center">
+                            <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/35 flex items-center justify-center text-red-500 mb-6 shadow-[0_0_30px_rgba(239,68,68,0.15)]">
+                              <AlertCircle className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-2xl font-display font-black text-white uppercase tracking-tight mb-2">
+                              Playback Not Possible
+                            </h3>
+                            <p className="text-lg font-bold text-brand uppercase tracking-widest mb-4">
+                              Video not available
+                            </p>
+                            <p className="text-sm font-medium text-zinc-400 max-w-sm leading-relaxed">
+                              No legal streaming feed has been configured for the selected Movie ID. Use the dashboard controls to configure a custom CDN endpoint.
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Failing/Error Overlays if connection breaks */}
-                      {playbackError && failedServer && (
+                      {playbackError && playbackError !== "Video not available" && failedServer && failedServer.id !== -1 && (
                         <ErrorFallback
                           errorMsg={playbackError}
                           failedServer={failedServer}

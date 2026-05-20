@@ -130,7 +130,7 @@ export function saveCustomServersForMovie(id: string, servers: VideoServer[]) {
   }
 }
 
-export function getLegalSourceForMovie(id: string, title: string): LegalMovieSource {
+export function getLegalSourceForMovie(id: string, title: string): LegalMovieSource | null {
   // Check if user has defined custom servers for this movie
   const customServers = getCustomServersForMovie(id);
   if (customServers && customServers.length > 0) {
@@ -145,18 +145,23 @@ export function getLegalSourceForMovie(id: string, title: string): LegalMovieSou
   const matched = DEMO_LEGAL_MOVIES.find(m => m.id === id);
   if (matched) return matched;
 
-  // Otherwise, procedurally generate a legal video source mapping for any TMDB film ID
-  const sum = String(id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const index = Math.abs(sum) % DEMO_LEGAL_MOVIES.length;
-  const picked = DEMO_LEGAL_MOVIES[index];
+  // Let's also check if title contains the name, e.g. "Sintel" or "Big Buck Bunny" or "Tears of Steel" to allow the demo movies to play
+  if (title) {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes("sintel")) {
+      const demo = DEMO_LEGAL_MOVIES.find(m => m.id === "demo-sintel");
+      if (demo) return demo;
+    }
+    if (lowerTitle.includes("big buck bunny") || lowerTitle.includes("bunny")) {
+      const demo = DEMO_LEGAL_MOVIES.find(m => m.id === "demo-bunny");
+      if (demo) return demo;
+    }
+    if (lowerTitle.includes("tears of steel")) {
+      const demo = DEMO_LEGAL_MOVIES.find(m => m.id === "demo-tears");
+      if (demo) return demo;
+    }
+  }
 
-  // Map the TMDB title dynamically in place
-  return {
-    id: String(id),
-    title: title || picked.title,
-    servers: picked.servers.map(srv => ({
-      ...srv,
-      // Keep descriptions and links exactly correct but custom
-    }))
-  };
+  // Otherwise, return null because we don't want any random fallback
+  return null;
 }
