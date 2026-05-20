@@ -69,7 +69,7 @@ const MovieDetail: React.FC = () => {
   const [failedServer, setFailedServer] = useState<VideoServer | null>(null);
 
   // Playback control states (Secure direct HTML5 player vs high compatibility embed frames)
-  const [playerMode, setPlayerMode] = useState<'html5' | 'embed'>('html5');
+  const [playerMode, setPlayerMode] = useState<'html5' | 'embed'>('embed');
   const [embedServerIndex, setEmbedServerIndex] = useState<number>(0);
   const [showCustomServerForm, setShowCustomServerForm] = useState(false);
   const [customUrl1, setCustomUrl1] = useState("");
@@ -225,40 +225,24 @@ const MovieDetail: React.FC = () => {
   // Launches the legal multi-server video player workflow
   const handleWatchNow = () => {
     console.log("movieId:", id);
-    console.log("available sources:", legalSource ? legalSource.servers : []);
-
-    if (legalSource && legalSource.servers && legalSource.servers.length > 0 && legalSource.servers.some(s => s.url)) {
-      // Find the user's preferred server if set, or default to general index
-      const preferred = preferredServer !== null ? legalSource.servers[preferredServer] : null;
-      const initialServer = preferred && preferred.url ? preferred : (legalSource.servers.find(s => s.url) || legalSource.servers[0]);
-      
-      console.log("selected source:", initialServer.url);
-      
-      setPlayerMode("html5");
-      setActiveServer(initialServer);
-      setPlaybackError(null);
-      setFailedServer(null);
-      setShowPlayer(true);
-    } else {
-      console.log("selected source: Embed Mirror (vidsrc/vidlink)");
-      setPlayerMode("embed");
-      setEmbedServerIndex(0);
-      
-      const defaultMirrorServer: VideoServer = {
-        id: 0,
-        name: "Mirror Server 1 (Vidlink)",
-        url: isTv
-          ? `https://vidlink.pro/tv/${id}/${selectedSeason || 1}/${selectedEpisode || 1}`
-          : `https://vidlink.pro/movie/${id}`,
-        desc: "Very fast, responsive direct streaming",
-        tag: "Fastest",
-        quality: "1080p Dynamic"
-      };
-      setActiveServer(defaultMirrorServer);
-      setPlaybackError(null);
-      setFailedServer(null);
-      setShowPlayer(true);
-    }
+    console.log("selected source: Embed Mirror (vidsrc/vidlink)");
+    setPlayerMode("embed");
+    setEmbedServerIndex(0);
+    
+    const defaultMirrorServer: VideoServer = {
+      id: 0,
+      name: "Mirror Server 1 (Vidlink)",
+      url: isTv
+        ? `https://vidlink.pro/tv/${id}/${selectedSeason || 1}/${selectedEpisode || 1}`
+        : `https://vidlink.pro/movie/${id}`,
+      desc: "Very fast, responsive direct streaming",
+      tag: "Fastest",
+      quality: "1080p Dynamic"
+    };
+    setActiveServer(defaultMirrorServer);
+    setPlaybackError(null);
+    setFailedServer(null);
+    setShowPlayer(true);
   };
 
   // Handles custom video error and starts the automatic fallback loop
@@ -785,31 +769,7 @@ const MovieDetail: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Mode switcher tabs */}
-                  <div className="grid grid-cols-2 bg-zinc-900/80 p-1 rounded-xl border border-white/5 shrink-0">
-                    <button
-                      onClick={() => setPlayerMode("html5")}
-                      className={cn(
-                        "text-center py-2 px-2 text-[10px] font-black uppercase rounded-lg cursor-pointer transition-all",
-                        playerMode === "html5"
-                          ? "bg-brand text-white shadow-lg shadow-brand/20"
-                          : "text-zinc-400 hover:text-white"
-                      )}
-                    >
-                      Secure HTML5 Player
-                    </button>
-                    <button
-                      onClick={() => setPlayerMode("embed")}
-                      className={cn(
-                        "text-center py-2 px-2 text-[10px] font-black uppercase rounded-lg cursor-pointer transition-all",
-                        playerMode === "embed"
-                          ? "bg-zinc-800 text-zinc-100 border border-white/10"
-                          : "text-zinc-400 hover:text-white"
-                      )}
-                    >
-                      Legacy Web Mirrors
-                    </button>
-                  </div>
+                  {/* Mode switcher tabs hidden for simplicity in mirror-only playback */}
 
                   {/* Season & Episode controls only for TV series inside the player sidebar */}
                   {isTv && movie.seasons && (
