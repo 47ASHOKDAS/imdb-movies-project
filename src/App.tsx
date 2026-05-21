@@ -16,79 +16,12 @@ import Platform from "./pages/Platform";
 import SetupGuide from "./components/layout/SetupGuide";
 import FloatingActions from "./components/layout/FloatingActions";
 import { tmdbService } from "./services/tmdb";
-import { MonitorPlay } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-
-function BootSequence({ onComplete }: { onComplete: () => void; key?: string }) {
-  const [logs, setLogs] = useState<string[]>([]);
-  const fullLogs = [
-    "INITIATING SYS_HANDSHAKE...",
-    "SECURE DECRYPTION_KEYS GENERATED...",
-    "HANDSHAKE PROTOCOLS SYNCHRONIZED...",
-    "CONNECTING TO NEXUS MAINFRAME...",
-    "NEXUS_OS SYSTEM ONLINE. HELLO USER."
-  ];
-
-  useEffect(() => {
-    let currentLog = 0;
-    const interval = setInterval(() => {
-      if (currentLog < fullLogs.length) {
-        setLogs(prev => [...prev, fullLogs[currentLog]]);
-        currentLog++;
-      } else {
-        clearInterval(interval);
-        setTimeout(onComplete, 400);
-      }
-    }, 160); // Speed up log generation for premium feel
-    return () => clearInterval(interval);
-  }, [onComplete]);
-
-  return (
-    <motion.div 
-      initial={{ opacity: 1 }} 
-      exit={{ opacity: 0, scale: 1.02, filter: "blur(12px)" }} 
-      transition={{ duration: 0.4, ease: "easeInOut" }}
-      className="fixed inset-0 bg-[#030305] z-[9999] flex flex-col items-center justify-center font-mono text-cyan-400 p-8 select-none"
-    >
-      <div className="max-w-2xl w-full relative">
-        <div className="flex items-center gap-4 mb-8">
-          <MonitorPlay size={40} className="animate-pulse text-cyan-400" />
-          <h1 className="text-3xl font-bold tracking-[0.4em] font-display text-white">NEXUS_OS</h1>
-        </div>
-        <div className="space-y-2 text-sm md:text-base opacity-80 min-h-[140px]">
-          {logs.map((log, i) => (
-            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex gap-4">
-              <span className="text-zinc-600">[{new Date().toISOString().split("T")[1].slice(0, 8)}]</span>
-              <span className="tracking-tight">{log}</span>
-            </motion.div>
-          ))}
-        </div>
-        <div className="mt-8 h-1 w-full bg-zinc-900 rounded overflow-hidden">
-          <div 
-            className="h-full bg-cyan-400 transition-all duration-200 ease-out shadow-[0_0_15px_#00f3ff]"
-            style={{ width: `${(logs.length / fullLogs.length) * 100}%` }}
-          />
-        </div>
-        
-        {/* Instant Skip action for smooth responsive bypass */}
-        <button
-          onClick={onComplete}
-          className="absolute bottom-[-60px] right-2 px-3 py-1.5 rounded-lg border border-cyan-400/20 text-[10px] uppercase font-bold tracking-[0.15em] text-cyan-400/60 hover:text-cyan-400 hover:border-cyan-400/50 hover:bg-cyan-400/5 transition-all outline-none"
-        >
-          Skip Intro
-        </button>
-      </div>
-    </motion.div>
-  );
-}
+import { motion } from "motion/react";
 
 function AppLayout() {
   const isConfigured = tmdbService.isConfigured;
   const location = useLocation();
   const isPlatformPage = location.pathname.startsWith("/platform/");
-  const [booted, setBooted] = useState(() => {
-    return sessionStorage.getItem("nexus_booted") === "true";
-  });
 
   useEffect(() => {
     let ticking = false;
@@ -107,17 +40,8 @@ function AppLayout() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  const handleBootComplete = () => {
-    sessionStorage.setItem("nexus_booted", "true");
-    setBooted(true);
-  };
-
   return (
     <>
-      <AnimatePresence mode="wait">
-        {!booted && <BootSequence key="boot" onComplete={handleBootComplete} />}
-      </AnimatePresence>
-
       <div className="min-h-screen flex flex-col font-sans relative overflow-hidden text-current bg-[#030305]">
         {/* Cinematic atmospheric layers */}
         <div className="noise-overlay" />
