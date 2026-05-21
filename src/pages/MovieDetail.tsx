@@ -347,22 +347,31 @@ const MovieDetail: React.FC = () => {
   // Launches the legal multi-server video player workflow
   const handleWatchNow = () => {
     console.log("movieId:", id);
-    console.log("selected source: Embed Mirror (vidsrc/vidlink/custom servers)");
-    setPlayerMode("embed");
-    setEmbedServerIndex(0);
-    
-    const defaultSrv = EMBED_SERVERS[0];
-    const defaultMirrorServer: VideoServer = {
-      id: defaultSrv.id,
-      name: defaultSrv.name,
-      url: defaultSrv.getUrl(movie ? movie.id : Number(id), movie?.imdb_id || "", isTv, Number(selectedSeason) || 1, Number(selectedEpisode) || 1),
-      desc: defaultSrv.desc,
-      tag: defaultSrv.tag,
-      quality: "1085p Dynamic"
-    };
-    setActiveServer(defaultMirrorServer);
     setPlaybackError(null);
     setFailedServer(null);
+    
+    if (hasPlayableSource && legalSource && legalSource.servers && legalSource.servers.length > 0) {
+      // Find recommendation/non-failing server to start with, or fall back to the first one
+      const recommendedServer = legalSource.servers.find(s => !s.isFailing && s.url) || legalSource.servers[0];
+      console.log("selected source:", recommendedServer.url);
+      setPlayerMode("html5");
+      setActiveServer(recommendedServer);
+    } else {
+      console.log("selected source: Embed Mirror (vidsrc/vidlink/custom servers)");
+      setPlayerMode("embed");
+      setEmbedServerIndex(0);
+      
+      const defaultSrv = EMBED_SERVERS[0];
+      const defaultMirrorServer: VideoServer = {
+        id: defaultSrv.id,
+        name: defaultSrv.name,
+        url: defaultSrv.getUrl(movie ? movie.id : Number(id), movie?.imdb_id || "", isTv, Number(selectedSeason) || 1, Number(selectedEpisode) || 1),
+        desc: defaultSrv.desc,
+        tag: defaultSrv.tag,
+        quality: "1085p Dynamic"
+      };
+      setActiveServer(defaultMirrorServer);
+    }
     setShowPlayer(true);
   };
 
@@ -853,14 +862,38 @@ const MovieDetail: React.FC = () => {
                       )}
                     </>
                   ) : (
-                    <iframe
-                      src={getEmbedUrl()}
-                      className="w-full h-full border-0 absolute inset-0 bg-black"
-                      allowFullScreen
-                      referrerPolicy="no-referrer"
-                      allow="autoplay; encrypted-media"
-                      title="Web Mirror Video Player"
-                    />
+                    <div className="relative w-full h-full aspect-video bg-black flex flex-col justify-center items-center">
+                      <iframe
+                        src={getEmbedUrl()}
+                        className="w-full h-full border-0 absolute inset-0 bg-black"
+                        allowFullScreen
+                        referrerPolicy="no-referrer"
+                        allow="autoplay; encrypted-media"
+                        title="Web Mirror Video Player"
+                      />
+                      
+                      {/* Floating Sandbox Helper Tooltip Badge */}
+                      <div className="absolute bottom-4 left-4 right-4 z-40 bg-black/85 backdrop-blur-md p-3 px-4 rounded-xl border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl">
+                        <div className="flex items-center gap-2.5 text-left">
+                          <div className="w-8 h-8 rounded-full bg-cyan-400/10 border border-cyan-400/30 flex items-center justify-center text-cyan-400 shrink-0">
+                            <Info className="w-4 h-4 animate-pulse" />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold text-white uppercase tracking-tight text-left">Mirror Stream Sandbox Alert</p>
+                            <p className="text-[10px] text-zinc-400 font-medium leading-relaxed max-w-sm sm:max-w-md mt-0.5 text-left">
+                              If the mirror stream screen below remains blank or slow, click the Open button to launch the high-speed feed in a new tab.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => window.open(getEmbedUrl(), '_blank')}
+                          className="px-3.5 py-2 bg-cyan-400 hover:bg-cyan-300 transition-colors text-black rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 cursor-pointer pointer-events-auto"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Open Stream
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -878,7 +911,55 @@ const MovieDetail: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Mode switcher tabs hidden for simplicity in mirror-only playback */}
+                  {/* Mode switcher tabs */}
+                  <div className="flex bg-[#0b0c10]/60 p-1 rounded-xl border border-white/5 shrink-0">
+                    <button
+                      onClick={() => {
+                        setPlayerMode("embed");
+                        setPlaybackError(null);
+                        setFailedServer(null);
+                        const defaultSrv = EMBED_SERVERS[0];
+                        const defaultMirrorServer: VideoServer = {
+                          id: defaultSrv.id,
+                          name: defaultSrv.name,
+                          url: defaultSrv.getUrl(movie ? movie.id : Number(id), movie?.imdb_id || "", isTv, Number(selectedSeason) || 1, Number(selectedEpisode) || 1),
+                          desc: defaultSrv.desc,
+                          tag: defaultSrv.tag,
+                          quality: "1085p Dynamic"
+                        };
+                        setActiveServer(defaultMirrorServer);
+                      }}
+                      className={cn(
+                        "flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer text-center",
+                        playerMode === "embed"
+                          ? "bg-brand text-white shadow-lg shadow-brand/10 font-black"
+                          : "text-zinc-400 hover:text-white"
+                      )}
+                    >
+                      Mirror Server (Embed)
+                    </button>
+                    {hasPlayableSource && (
+                      <button
+                        onClick={() => {
+                          setPlayerMode("html5");
+                          setPlaybackError(null);
+                          setFailedServer(null);
+                          if (legalSource && legalSource.servers.length > 0) {
+                            const recommendedServer = legalSource.servers.find(s => !s.isFailing && s.url) || legalSource.servers[0];
+                            setActiveServer(recommendedServer);
+                          }
+                        }}
+                        className={cn(
+                          "flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer text-center",
+                          playerMode === "html5"
+                            ? "bg-brand text-white shadow-lg shadow-brand/10 font-black"
+                            : "text-zinc-400 hover:text-white"
+                        )}
+                      >
+                        Secure CDN (HTML5)
+                      </button>
+                    )}
+                  </div>
 
                   {/* Season & Episode controls only for TV series inside the player sidebar */}
                   {isTv && movie.seasons && (
@@ -1001,7 +1082,7 @@ const MovieDetail: React.FC = () => {
                   ) : playerMode === "html5" ? (
                     <>
                       {/* Multi-server selection layout component */}
-                      {legalSource && (
+                      {legalSource && activeServer && (
                         <ServerSelector
                           servers={legalSource.servers}
                           activeServerId={activeServer.id}
@@ -1102,7 +1183,7 @@ const MovieDetail: React.FC = () => {
                         <p className="text-zinc-300 uppercase tracking-tight">
                           {playerMode === "embed"
                             ? "Web Mirror"
-                            : activeServer.url.endsWith(".m3u8") || activeServer.url.includes("adaptive")
+                            : activeServer?.url?.endsWith(".m3u8") || activeServer?.url?.includes("adaptive")
                             ? "HLS (.m3u8)"
                             : "MP4 Progressive"}
                         </p>
@@ -1110,7 +1191,7 @@ const MovieDetail: React.FC = () => {
                       <div className="space-y-0.5">
                         <p className="lowercase tracking-wide font-medium">Resolution</p>
                         <p className="text-zinc-300 uppercase tracking-tight">
-                          {playerMode === "embed" ? "1085p Dynamic" : activeServer.quality}
+                          {playerMode === "embed" ? "1080p Mirror" : activeServer?.quality || "1080p Direct"}
                         </p>
                       </div>
                       <div className="space-y-0.5">
