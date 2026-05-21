@@ -311,14 +311,15 @@ const MovieDetail: React.FC = () => {
     );
 
   const inWatchlist = isInWatchlist(movie.id);
-  const trailer = movie.videos.results.find(
+  const trailer = movie.videos?.results?.find(
     (v) => v.type === "Trailer" && v.site === "YouTube",
-  );
+  ) || movie.videos?.results?.find((v) => v.site === "YouTube");
   
   // Safely fallback to other regions if IN is not available
-  const watchData = movie["watch/providers"].results?.IN || 
-                    movie["watch/providers"].results?.US || 
-                    (movie["watch/providers"].results ? Object.values(movie["watch/providers"].results)[0] : null) as any;
+  const watchProvidersObj = movie["watch/providers"]?.results;
+  const watchData = watchProvidersObj
+    ? (watchProvidersObj.IN || watchProvidersObj.US || Object.values(watchProvidersObj)[0]) as any
+    : null;
   const providers =
     watchData?.flatrate || watchData?.rent || watchData?.buy || [];
   const watchLink = watchData?.link;
@@ -584,7 +585,7 @@ const MovieDetail: React.FC = () => {
                 <div className="flex items-center gap-1.5 text-gold">
                   <Star className="w-6 h-6 fill-current drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
                   <span className="text-3xl font-display font-black text-current">
-                    {movie.vote_average.toFixed(1)}
+                    {movie.vote_average !== undefined && movie.vote_average !== null ? movie.vote_average.toFixed(1) : "0.0"}
                   </span>
                 </div>
               </div>
@@ -613,7 +614,7 @@ const MovieDetail: React.FC = () => {
             className="lg:col-span-8 flex flex-col justify-center"
           >
             <div className="flex flex-wrap items-center gap-3 mb-6">
-              {movie.genres.map((genre) => (
+              {movie.genres?.map((genre) => (
                 <span
                   key={genre.id}
                   className="bg-brand/10 border border-brand/30 text-brand text-[10px] font-black tracking-widest uppercase px-4 py-2 rounded-full transition-all hover:bg-brand hover:text-white"
@@ -623,7 +624,7 @@ const MovieDetail: React.FC = () => {
               ))}
               <span className="glass-card border-current/10 text-zinc-500 text-[10px] font-black tracking-widest uppercase px-4 py-2 rounded-full flex items-center gap-2">
                 <Clock className="w-3 h-3" />
-                {movie.runtime}m
+                {movie.runtime || 0}m
               </span>
             </div>
 
@@ -696,7 +697,7 @@ const MovieDetail: React.FC = () => {
             <div className="h-[1px] flex-grow mx-8 bg-current/10" />
           </div>
           <div className="flex gap-8 overflow-x-auto pb-8 horizontal-scroll">
-            {movie.credits.cast.slice(0, 10).map((actor, idx) => (
+            {movie.credits?.cast?.slice(0, 10).map((actor, idx) => (
               <Link
                 to={`/person/${actor.id}`}
                 key={actor.id}

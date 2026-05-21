@@ -552,9 +552,9 @@ export const tmdbService = {
     return fetchTMDB<{ results: any[] }>("/search/multi", { query, page: page.toString() });
   },
   getMovieDetails: (id: string | number) =>
-    fetchTMDB<any>(`/movie/${id}`),
+    fetchTMDB<any>(`/movie/${id}`, { append_to_response: "credits,videos,watch/providers" }),
   getTvDetails: (id: string | number) =>
-    fetchTMDB<any>(`/tv/${id}`),
+    fetchTMDB<any>(`/tv/${id}`, { append_to_response: "credits,videos,watch/providers" }),
   getSimilarTv: (id: string | number) =>
     fetchTMDB<{ results: any[] }>(`/tv/${id}/similar`),
   getMovieByImdbId: async (imdbId: string) => {
