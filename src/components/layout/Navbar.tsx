@@ -90,6 +90,39 @@ const Navbar: React.FC = () => {
           )}
         </button>
 
+        {/* User Profile Avatar dropdown card */}
+        <div className="relative group/avatar">
+          <button className="w-10 h-10 rounded-full border border-brand/20 overflow-hidden shadow-md flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95">
+            <img 
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100" 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
+          </button>
+          
+          <div className="absolute right-0 top-full mt-3 w-64 bg-zinc-950/95 border border-white/10 rounded-2xl p-4 shadow-2xl opacity-0 scale-95 pointer-events-none group-hover/avatar:opacity-100 group-hover/avatar:scale-100 group-hover/avatar:pointer-events-auto transition-all duration-300 origin-top-right backdrop-blur-xl z-[100]">
+            <div className="flex items-center gap-3 border-b border-white/5 pb-3 mb-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-brand/35">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100" alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">Alex Mercer</h4>
+                <p className="text-[10px] text-brand font-bold tracking-widest uppercase mt-0.5">Premium Ultra</p>
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              <div className="text-[10px] text-zinc-500 font-mono font-bold tracking-tight">
+                <span className="block text-[8px] uppercase tracking-widest text-zinc-650 mb-0.5">REGISTERED ACCOUNT</span>
+                <span className="truncate block font-semibold text-zinc-300">47ashokdas@gmail.com</span>
+              </div>
+              <div className="text-[10px] text-zinc-500 font-mono font-bold tracking-tight">
+                <span className="block text-[8px] uppercase tracking-widest text-zinc-650 mb-0.5">MEMBERSHIP ACCESS</span>
+                <span className="text-cyan-400 font-semibold uppercase">ACTIVE SUBSCRIBER</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("toggleSidebar"))}
           className="w-10 h-10 rounded-full border border-current/20 flex items-center justify-center transition-all hover:bg-current/10"

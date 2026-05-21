@@ -231,10 +231,17 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, className }) => {
           <h3 className="text-current text-sm font-semibold truncate group-hover:text-brand transition-colors">
             {movie.title || movie.name}
           </h3>
-          <span className="text-zinc-500 text-xs font-medium">
-            {(movie.release_date || movie.first_air_date)?.split("-")[0] ||
-              "Unknown"}
-          </span>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-zinc-500 text-xs font-medium">
+              {(movie.release_date || movie.first_air_date)?.split("-")[0] ||
+                "Unknown"}
+            </span>
+            {movie.original_language && (
+              <span className="text-[9px] uppercase font-bold tracking-wider font-mono text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded border border-cyan-400/20 shadow-sm">
+                {movie.original_language}
+              </span>
+            )}
+          </div>
         </div>
       </motion.div>
 
