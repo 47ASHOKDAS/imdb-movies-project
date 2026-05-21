@@ -37,20 +37,20 @@ function BootSequence({ onComplete }: { onComplete: () => void; key?: string }) 
         currentLog++;
       } else {
         clearInterval(interval);
-        setTimeout(onComplete, 550);
+        setTimeout(onComplete, 400);
       }
-    }, 250);
+    }, 160); // Speed up log generation for premium feel
     return () => clearInterval(interval);
   }, [onComplete]);
 
   return (
     <motion.div 
       initial={{ opacity: 1 }} 
-      exit={{ opacity: 0, scale: 1.05, filter: "blur(15px)" }} 
-      transition={{ duration: 0.6, ease: "easeInOut" }}
+      exit={{ opacity: 0, scale: 1.02, filter: "blur(12px)" }} 
+      transition={{ duration: 0.4, ease: "easeInOut" }}
       className="fixed inset-0 bg-[#030305] z-[9999] flex flex-col items-center justify-center font-mono text-cyan-400 p-8 select-none"
     >
-      <div className="max-w-2xl w-full">
+      <div className="max-w-2xl w-full relative">
         <div className="flex items-center gap-4 mb-8">
           <MonitorPlay size={40} className="animate-pulse text-cyan-400" />
           <h1 className="text-3xl font-bold tracking-[0.4em] font-display text-white">NEXUS_OS</h1>
@@ -69,6 +69,14 @@ function BootSequence({ onComplete }: { onComplete: () => void; key?: string }) 
             style={{ width: `${(logs.length / fullLogs.length) * 100}%` }}
           />
         </div>
+        
+        {/* Instant Skip action for smooth responsive bypass */}
+        <button
+          onClick={onComplete}
+          className="absolute bottom-[-60px] right-2 px-3 py-1.5 rounded-lg border border-cyan-400/20 text-[10px] uppercase font-bold tracking-[0.15em] text-cyan-400/60 hover:text-cyan-400 hover:border-cyan-400/50 hover:bg-cyan-400/5 transition-all outline-none"
+        >
+          Skip Intro
+        </button>
       </div>
     </motion.div>
   );
@@ -83,9 +91,16 @@ function AppLayout() {
   });
 
   useEffect(() => {
+    let ticking = false;
     const handleMouseMove = (e: MouseEvent) => {
-      document.documentElement.style.setProperty("--mouse-x", `${e.clientX}px`);
-      document.documentElement.style.setProperty("--mouse-y", `${e.clientY}px`);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          document.documentElement.style.setProperty("--mouse-x", `${e.clientX}px`);
+          document.documentElement.style.setProperty("--mouse-y", `${e.clientY}px`);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
